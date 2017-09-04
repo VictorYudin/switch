@@ -1,0 +1,57 @@
+image: Visual Studio 2017
+platform: x64
+configuration: Release
+
+# clone directory
+clone_folder: c:\projects\switch
+
+install:
+    - cmd: set PATH=C:\Program Files\Git\cmd;C:\cygwin64\bin;C:\Program Files (x86)\CMake\bin;C:\Windows\System32;C:\Windows\System32\wbem
+
+    # Python
+    - cmd: curl https://www.python.org/ftp/python/2.7.13/python-2.7.13.amd64.msi -o python.msi
+    - cmd: msiexec /a python.msi /qb TARGETDIR=C:\projects\switch\python
+
+    # GNU ed
+    - cmd: curl http://mirrors.kernel.org/sourceware/cygwin/x86_64/release/ed/ed-1.14.1-1.tar.xz -o ed.tar.xz
+    - cmd: tar -xf ed.tar.xz
+
+    # unzip
+    - cmd: curl http://mirrors.kernel.org/sourceware/cygwin/x86_64/release/unzip/unzip-6.0-17.tar.xz -o unzip.tar.xz
+    - cmd: tar -xf unzip.tar.xz
+
+    # nasm
+    - cmd: curl http://www.nasm.us/pub/nasm/releasebuilds/2.13.01/win64/nasm-2.13.01-win64.zip -o nasm.zip
+    - cmd: usr\bin\unzip nasm.zip
+    - cmd: chmod -R u+x nasm-2.13.01/nasm.exe
+    - cmd: nasm-2.13.01\nasm.exe --version
+
+    # jom
+    - cmd: curl --tlsv1.2 -o jom.tar.xz -L https://github.com/VictorYudin/saturn-jom/releases/download/1.0.5/jom-v1.1.2.tar.xz
+    - cmd: tar -xf jom.tar.xz
+
+    # boost
+    - cmd: curl --tlsv1.2 -o boost.tar.xz -L https://github.com/VictorYudin/saturn-boost/releases/download/1.0.1/boost-1_61_0.tar.xz
+    - cmd: tar -xf boost.tar.xz
+
+    # Put them to PATH
+    - cmd: set PATH=%PATH%;C:\projects\switch\usr\bin;C:\projects\switch\nasm-2.13.01;C:\projects\switch\jom\bin;%SYSTEMROOT%\System32\WindowsPowerShell\v1.0
+
+    # MSVC environment
+    - cmd: '"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"'
+
+    # Dependencies
+    - cmd: git clone https://github.com/VictorYudin/saturn.git dependencies
+    - cmd: make -C dependencies boost_EXTERNAL=C:/projects/switch/boost PYTHON_BIN=C:/projects/switch/python/python.exe usd -j4
+
+build_script:
+    - cmd: C:\projects\switch\install.cmd
+
+artifacts:
+    - path: switch*.zip
+      name: Package
+      type: zip
+
+deploy:
+    - provider: Environment
+      name: GitHub Release
