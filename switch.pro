@@ -1,15 +1,22 @@
 TEMPLATE = app
 TARGET = switch
 INCLUDEPATH += .
+QT += qml quick
 
 SOURCES += \
     window.cpp \
+    render.cpp \
     model.cpp \
     qtmain.cpp
 
 HEADERS += \
     window.h \
+    render.h \
     model.h
+
+RESOURCES += switch.qrc
+
+QML_FILES = switch.qml
 
 LIBS += \
     -LC:\Temp\saturn-build\lib\tbb\lib \

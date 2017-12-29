@@ -1,8 +1,14 @@
-#include "window.h"
 
 #include <QGuiApplication>
+#include <QQmlExtensionPlugin>
+#include <QtPlugin>
+#include <QtQuick/QQuickView>
 
-int main(int argc, char **argv)
+#include "render.h"
+
+// Q_IMPORT_PLUGIN(QtGraphicalEffects);
+
+int main(int argc, char** argv)
 {
     QSurfaceFormat fmt;
     fmt.setDepthBufferSize(24);
@@ -24,8 +30,15 @@ int main(int argc, char **argv)
 
     QGuiApplication app(argc, argv);
 
-    OpenGLWindow glWindow;
-    glWindow.showMaximized();
+    // qobject_cast<QQmlExtensionPlugin*>(
+    //     qt_static_plugin_QtGraphicalEffects().instance())
+    //     ->registerTypes("QtGraphicalEffects");
+    qmlRegisterType<Switch>("MySwitch", 1, 0, "SwitchRender");
+
+    QQuickView view;
+    view.setResizeMode(QQuickView::SizeRootObjectToView);
+    view.setSource(QUrl("qrc:///switch/switch.qml"));
+    view.show();
 
     return app.exec();
 }

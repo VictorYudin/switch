@@ -1,0 +1,10 @@
+<RCC>
+    <qresource prefix="/switch">
+        <file>switch.qml</file>
+    </qresource>
+    <qresource prefix="/qt-project.org/imports/QtGraphicalEffects/shaders">
+        <file>fastblur_internal.vert</file>
+        <file>fastblur_internal.frag</file>
+        <file>fastblur.frag</file>
+    </qresource>
+</RCC>
