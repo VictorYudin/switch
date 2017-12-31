@@ -16,7 +16,7 @@ HEADERS += \
 
 RESOURCES += switch.qrc
 
-QML_FILES = switch.qml
+QML_FILES += switch.qml SwitchButton.qml
 
 LIBS += \
     -LC:\Temp\saturn-build\lib\tbb\lib \

@@ -4,114 +4,117 @@ import MySwitch 1.0
 
 Item
 {
+    id: root
     width: 320
     height: 480
+    state: "Menu"
 
-    Item
+    SwitchRender
     {
-        id: mygame
+        id: game
         anchors.fill: parent
-
-        SwitchRender
-        {
-            id: game
-            anchors.fill: parent
-        }
-
-
-        Column
-        {
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.verticalCenter: parent.verticalCenter
-
-            spacing: parent.height / 50
-
-            Rectangle
-            {
-                color: Qt.rgba(1, 1, 1, 0.9)
-                radius: 10.0
-                width: parent.parent.width/3
-                height: parent.parent.width/6
-
-                Text
-                {
-                    anchors.centerIn: parent
-                    font.pointSize: 24
-                    text: "New game"
-                }
-            }
-
-            Rectangle
-            {
-                color: Qt.rgba(1, 1, 1, 0.9)
-                radius: 10.0
-                width: parent.parent.width/3
-                height: parent.parent.width/6
-
-                Text
-                {
-                    anchors.centerIn: parent
-                    font.pointSize: 24
-                    text: "Continue"
-                }
-            }
-
-            Rectangle
-            {
-                color: Qt.rgba(1, 1, 1, 0.9)
-                radius: 10.0
-                width: parent.parent.width/3
-                height: parent.parent.width/6
-
-                Text
-                {
-                    anchors.centerIn: parent
-                    font.pointSize: 24
-                    text: "About"
-                }
-            }
-        }
-    }
-
-    Rectangle {
-        id: rect
-        color: Qt.rgba(1, 1, 1, 0.7)
-        radius: 10
-        border.width: 1
-        border.color: "white"
-        anchors.fill: label
-        anchors.margins: -10
-
-        MouseArea {
-            anchors.fill: parent
-            onPressed: {
-                game.newGame()
-            }
-        }
-    }
-
-    Text {
-        id: label
-        color: "black"
-        wrapMode: Text.WordWrap
-        text: "New Game"
-        anchors.right: parent.right
-        anchors.left: parent.left
-        anchors.bottom: parent.bottom
-        anchors.margins: 20
     }
 
     FastBlur
     {
+        id: blur
         anchors.fill: parent
-        source: mygame
-        radius: 32
+        source: game
+        radius: 128
+
+        Rectangle
+        {
+            color: Qt.rgba(0.1, 0.1, 0.1, 0.85)
+            anchors.fill: parent
+        }
     }
 
-    Connections {
-        target: game
-        onWinGame: {
-            rect.color = Qt.rgba(Math.random(), Math.random(), Math.random(), 1);
+    Column
+    {
+        id: menu
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: root.height / 20
+
+        Column
+        {
+            anchors.horizontalCenter: parent.horizontalCenter
+            spacing: 0
+
+            Text
+            {
+                anchors.horizontalCenter: parent.horizontalCenter
+
+                font.pointSize: 48
+                text: "Switch"
+                color: "white"
+            }
+
+            Text
+            {
+                anchors.horizontalCenter: parent.horizontalCenter
+
+                font.pointSize: 12
+                text: "From Victor Yudin"
+                color: "white"
+            }
         }
+
+        Row
+        {
+            spacing: root.height / 40
+            anchors.horizontalCenter: parent.horizontalCenter
+
+            SwitchButton
+            {
+                width: root.width/6
+                height: root.width/7
+                onClicked: {
+                    root.state = "Game"
+                    game.newGame()
+                }
+                text: "New game"
+            }
+
+            SwitchButton
+            {
+                width: root.width/6
+                height: root.width/7
+                text: "About"
+            }
+        }
+    }
+
+    Connections
+    {
+        target: game
+        onWinGame:
+        {
+            root.state = "Menu"
+        }
+    }
+
+    states:
+    [
+        State
+        {
+            name: "Game"
+            PropertyChanges { target: game; enabled: true }
+            PropertyChanges { target: blur; opacity: 0 }
+            PropertyChanges { target: menu; opacity: 0; enabled: false }
+        },
+        State
+        {
+            name: "Menu"
+            PropertyChanges { target: game; enabled: false }
+            PropertyChanges { target: blur; opacity: 1 }
+            PropertyChanges { target: menu; opacity: 1; enabled: true }
+        }
+    ]
+
+    transitions: Transition
+    {
+        PropertyAnimation { property: "opacity"; duration: 500 }
+        ColorAnimation { duration: 500 }
     }
 }

@@ -9,30 +9,28 @@
 #include <QOpenGLWindow>
 #include <QSharedPointer>
 #include <QTime>
-#include <QtQuick/QQuickItem>
+#include <QtQuick/QQuickFramebufferObject>
 
-class SwitchRender : public QObject, protected QOpenGLExtraFunctions
+class SwitchRender : public QQuickFramebufferObject::Renderer
 {
-    Q_OBJECT
 public:
     SwitchRender();
     ~SwitchRender();
 
     void init();
 
-    void setViewportSize(const QSize& size);
-    void setWindow(QQuickWindow* window) { m_window = window; }
-    void mouseReleaseEvent(QMouseEvent* ev);
+    QOpenGLFramebufferObject* createFramebufferObject(const QSize& size)
+        Q_DECL_OVERRIDE;
 
-signals:
-    void winGame();
+    void render() Q_DECL_OVERRIDE;
 
-public slots:
-    void paint();
+protected:
+    void synchronize(QQuickFramebufferObject* item) Q_DECL_OVERRIDE;
+
+    // signals:
+    //     void winGame();
 
 private:
-    QQuickWindow* m_window;
-
     void initialize();
 
     int loadModel(
@@ -48,7 +46,7 @@ private:
     int mSwitchNPoints;
 
     float mSwitchAngles[16];
-    float mSwitchAnglesAspire[16];
+    int mSwitchAnglesAspire[16];
     bool mWin;
 
     QMatrix4x4 mProj;
@@ -58,35 +56,33 @@ private:
 
     QTime mTime;
 
-    QSharedPointer<QOpenGLFramebufferObject> mFrameBuffer;
-
     int mSize;
 };
 
-class Switch : public QQuickItem
+class Switch : public QQuickFramebufferObject
 {
     Q_OBJECT
 
 public:
     Switch(QQuickItem* parent = Q_NULLPTR);
+    Renderer* createRenderer() const;
 
 protected:
-    virtual void mousePressEvent(QMouseEvent* ev) override;
-    virtual void mouseReleaseEvent(QMouseEvent* ev) override;
+    virtual void mousePressEvent(QMouseEvent* ev) Q_DECL_OVERRIDE;
+    virtual void mouseReleaseEvent(QMouseEvent* ev) Q_DECL_OVERRIDE;
 
 signals:
     void winGame();
 
 public slots:
-    void sync();
-    void cleanup();
     void newGame();
 
-private slots:
-    void handleWindowChanged(QQuickWindow* win);
-
 private:
-    QSharedPointer<SwitchRender> mRender;
+    friend class SwitchRender;
+
+    int mLastClickX;
+    int mLastClickY;
+    bool mNewGamePressed;
 };
 
 #endif

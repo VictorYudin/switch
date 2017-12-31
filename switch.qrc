@@ -1,6 +1,7 @@
 <RCC>
     <qresource prefix="/switch">
         <file>switch.qml</file>
+        <file>SwitchButton.qml</file>
     </qresource>
     <qresource prefix="/qt-project.org/imports/QtGraphicalEffects/shaders">
         <file>fastblur_internal.vert</file>

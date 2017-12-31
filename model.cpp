@@ -82,40 +82,26 @@ Model::Model(const char* iFile)
         {
             for (int i = 2; i < n; i++)
             {
-                const GfVec3f point1 =
-                    matrix.Transform(points[faceVertexIndices[counter]]);
-                const GfVec3f point2 = matrix.Transform(
-                    points[faceVertexIndices[counter + i - 1]]);
-                const GfVec3f point3 =
-                    matrix.Transform(points[faceVertexIndices[counter + i]]);
+                const GfVec3f trianglePoints[] = {
+                    matrix.Transform(points[faceVertexIndices[counter]]),
+                    matrix.Transform(
+                        points[faceVertexIndices[counter + i - 1]]),
+                    matrix.Transform(points[faceVertexIndices[counter + i]])};
 
-                const GfVec3f u = point2 - point1;
-                const GfVec3f v = point3 - point1;
+                const GfVec3f u = trianglePoints[1] - trianglePoints[0];
+                const GfVec3f v = trianglePoints[2] - trianglePoints[0];
                 const GfVec3f normal = GfCross(u, v).GetNormalized();
 
-                mData.push_back(point1[0]);
-                mData.push_back(point1[1]);
-                mData.push_back(point1[2]);
+                for (int p = 2; p >= 0; p--)
+                {
+                    mData.push_back(trianglePoints[p][0]);
+                    mData.push_back(trianglePoints[p][1]);
+                    mData.push_back(trianglePoints[p][2]);
 
-                mData.push_back(normal[0]);
-                mData.push_back(normal[1]);
-                mData.push_back(normal[2]);
-
-                mData.push_back(point2[0]);
-                mData.push_back(point2[1]);
-                mData.push_back(point2[2]);
-
-                mData.push_back(normal[0]);
-                mData.push_back(normal[1]);
-                mData.push_back(normal[2]);
-
-                mData.push_back(point3[0]);
-                mData.push_back(point3[1]);
-                mData.push_back(point3[2]);
-
-                mData.push_back(normal[0]);
-                mData.push_back(normal[1]);
-                mData.push_back(normal[2]);
+                    mData.push_back(normal[0]);
+                    mData.push_back(normal[1]);
+                    mData.push_back(normal[2]);
+                }
             }
 
             counter += n;
