@@ -52,6 +52,7 @@ private:
     QMatrix4x4 mProj;
 
     int mMVPLoc;
+    int mCamLoc;
     int mLightPosLoc;
 
     QTime mTime;

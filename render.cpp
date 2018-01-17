@@ -15,10 +15,12 @@ static const char* vertexShaderSource =
     "layout(location = 1) in vec3 normal;\n"
     "layout(location = 2) in float angle;\n"
     "uniform highp mat4 mvp;\n"
+    "uniform highp vec3 camera;\n"
     "out vec3 vert;\n"
     "out vec3 vertNormal;\n"
     "out vec3 color;\n"
     "out vec3 vertObjectID;\n"
+    "out vec4 V;\n"
     "mat4 rotationMatrix(float a)\n"
     "{\n"
     "    float s = sin(3.1415926 * a / 2.0);\n"
@@ -52,6 +54,7 @@ static const char* vertexShaderSource =
     "      floor(floatID / 10.0) * 0.1,"
     "      0.0f);\n"
     "   gl_Position = verticalFlip * mvp * world * vec4(vertex, 1.0f);\n"
+    "   V = vec4(camera, 1.0f) - world * vec4(vertex, 1.0f);\n"
     "}\n";
 
 static const char* fragmentShaderSource =
@@ -60,12 +63,32 @@ static const char* fragmentShaderSource =
     "in highp vec3 vertNormal;\n"
     "in highp vec3 color;\n"
     "in highp vec3 vertObjectID;\n"
+    "in highp vec4 V;\n"
     "layout(location = 0) out highp vec4 fragColor;\n"
     "layout(location = 1) out highp vec4 objectID;\n"
+    "highp float ggx (highp vec3 N, highp vec3 V, highp vec3 L, highp float roughness, highp float F0) {\n"
+      "highp float alpha = roughness*roughness;\n"
+      "highp vec3 H = normalize(L + V);\n"
+      "highp float dotLH = max(0.0, dot(L,H));\n"
+      "highp float dotNH = max(0.0, dot(N,H));\n"
+      "highp float dotNL = max(0.0, dot(N,L));\n"
+      "highp float alphaSqr = alpha * alpha;\n"
+      "highp float denom = dotNH * dotNH * (alphaSqr - 1.0) + 1.0;\n"
+      "highp float D = alphaSqr / (3.141592653589793 * denom * denom);\n"
+      "highp float F = F0 + (1.0 - F0) * pow(1.0 - dotLH, 5.0);\n"
+      "highp float k = 0.5 * alpha;\n"
+      "highp float k2 = k * k;\n"
+      "return dotNL * D * F / (dotLH*dotLH*(1.0-k2)+k2);\n"
+    "}\n"
     "void main() {\n"
     "   highp vec3 L = lightPos - vert;\n"
-    "   highp float NL = max(dot(normalize(vertNormal), normalize(L)), 0.0);\n"
-    "   fragColor = vec4(color * NL, 1.0);\n"
+    "   highp vec3 nL = normalize(L);\n"
+    "   highp vec3 nN = normalize(vertNormal);\n"
+    "   highp float NL = max(dot(nN, nL), 0.0);\n"
+    "   highp float g = ggx(nN, V.xyz, nL, 0.5, 0.1);\n"
+    "   fragColor = vec4(color * NL + vec3(g, g, g), 1.0);\n"
+    // "   highp float t = max(0.0, dot(nN, normalize(V.xyz)));\n"
+    // "   fragColor = vec4(vec3(t,t,t), 1.0);\n"
     "   objectID = vec4(vertObjectID, 1.0f);\n"
     "}\n";
 
@@ -179,6 +202,7 @@ void SwitchRender::render()
         QVector3D(0.0f, 0.0f, 30.0f),
         QVector3D(0.0f, 1.0f, 0.0f));
     mProgram->setUniformValue(mMVPLoc, mProj * camera);
+    mProgram->setUniformValue(mCamLoc, QVector3D(0.0f, 500.0f, 250.0f));
 
     // Setup light position.
     mProgram->setUniformValue(mLightPosLoc, QVector3D(0.0f, 300.0f, 0.0f));
@@ -188,7 +212,8 @@ void SwitchRender::render()
     mSwitchAnglesBuffer->release();
 
     mSwitchVAO->bind();
-    f->glDrawArraysInstanced(GL_TRIANGLES, 0, mSwitchNPoints, mSize * mSize);
+    f->glDrawElementsInstanced(
+        GL_TRIANGLES, mSwitchNPoints, GL_UNSIGNED_INT, nullptr, mSize * mSize);
     mSwitchVAO->release();
 
     mProgram->release();
@@ -266,6 +291,7 @@ void SwitchRender::initialize()
     mProgram->link();
 
     mMVPLoc = mProgram->uniformLocation("mvp");
+    mCamLoc = mProgram->uniformLocation("camera");
     mLightPosLoc = mProgram->uniformLocation("lightPos");
 
     mSwitchVAO.reset(new QOpenGLVertexArrayObject());
@@ -304,7 +330,13 @@ int SwitchRender::loadModel(
         GL_FALSE,
         6 * sizeof(GLfloat),
         reinterpret_cast<void*>(3 * sizeof(GLfloat)));
-    vbo.release();
+
+    QOpenGLBuffer ibo(QOpenGLBuffer::IndexBuffer);
+    ibo.create();
+    ibo.setUsagePattern(QOpenGLBuffer::StaticDraw);
+    ibo.bind();
+    ibo.allocate(model.indexData(), model.indexes() * sizeof(int));
+
 
     if (oSwitchAngles)
     {
@@ -318,8 +350,10 @@ int SwitchRender::loadModel(
     }
 
     oVAO->release();
+    vbo.release();
+    ibo.release();
 
-    return model.points();
+    return model.indexes();
 }
 
 int SwitchRender::getObjectID(int x, int y)

@@ -20,6 +20,7 @@ QML_FILES += switch.qml SwitchButton.qml
 
 LIBS += \
     -LC:\Temp\saturn-build\lib\tbb\lib \
+    C:\Temp\saturn-build\lib\opensubd\lib\osdCPU.lib \
     C:\Temp\saturn-build\lib\boost\lib\libboost_regex.lib \
     C:\Temp\saturn-build\lib\boost\lib\libboost_system.lib \
     C:\Temp\saturn-build\lib\boost\lib\libboost_filesystem.lib \
@@ -41,6 +42,7 @@ LIBS += \
     Shlwapi.lib Dbghelp.lib
 
 INCLUDEPATH += \
+    C:\Temp\saturn-build\lib\opensubd\include \
     C:\Temp\saturn-build\lib\usd\include \
     C:\Temp\saturn-build\lib\boost\include \
     C:\Temp\saturn-build\lib\tbb\include
