@@ -131,7 +131,9 @@ Item
 
         Text
         {
-            anchors.centerIn: parent
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.top: parent.top
+            anchors.topMargin: font.pointSize * 2
             color: "white"
             font.pointSize: 12
             text: parent.parent.text

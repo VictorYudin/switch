@@ -78,9 +78,32 @@ Item
 
             SwitchButton
             {
+                id: aboutButton
                 width: root.width/6
                 height: root.width/7
+                onClicked: {
+                    if (root.state != "ShowInfo")
+                    {
+                        root.state = "ShowInfo"
+                    }
+                    else
+                    {
+                        root.state = "Menu"
+                    }
+                }
                 text: "About"
+
+                Text
+                {
+                    id: copyright
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.top: parent.top
+                    anchors.topMargin: font.pointSize * 10
+                    color: "white"
+                    font.pointSize: 10
+                    text: "// Copyright (c) Victor Yudin. All rights reserved."
+                    opacity: 0
+                }
             }
         }
     }
@@ -109,12 +132,21 @@ Item
             PropertyChanges { target: game; enabled: false }
             PropertyChanges { target: blur; opacity: 1 }
             PropertyChanges { target: menu; opacity: 1; enabled: true }
+        },
+        State
+        {
+            name: "ShowInfo"
+            PropertyChanges { target: aboutButton; width: 2 * root.width / 3 }
+            PropertyChanges { target: aboutButton; height: 2 * root.height / 4 }
+            PropertyChanges { target: copyright; opacity: 1 }
         }
     ]
 
     transitions: Transition
     {
         PropertyAnimation { property: "opacity"; duration: 500 }
+        PropertyAnimation { property: "width"; duration: 500 }
+        PropertyAnimation { property: "height"; duration: 500 }
         ColorAnimation { duration: 500 }
     }
 }
