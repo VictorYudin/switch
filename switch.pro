@@ -4,15 +4,17 @@ INCLUDEPATH += .
 QT += qml quick
 
 SOURCES += \
-    window.cpp \
-    render.cpp \
     model.cpp \
-    qtmain.cpp
+    object.cpp \
+    qtmain.cpp \
+    render.cpp \
+    window.cpp
 
 HEADERS += \
-    window.h \
+    model.h \
+    object.h \
     render.h \
-    model.h
+    window.h
 
 RESOURCES += switch.qrc
 

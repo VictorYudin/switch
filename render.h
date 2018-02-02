@@ -10,6 +10,7 @@
 #include <QSharedPointer>
 #include <QTime>
 #include <QtQuick/QQuickFramebufferObject>
+#include "object.h"
 
 class SwitchRender : public QQuickFramebufferObject::Renderer
 {
@@ -27,37 +28,20 @@ public:
 protected:
     void synchronize(QQuickFramebufferObject* item) Q_DECL_OVERRIDE;
 
-    // signals:
-    //     void winGame();
-
 private:
-    void initialize();
-
-    int loadModel(
-        const char* iFileName,
-        QSharedPointer<QOpenGLVertexArrayObject> oVAO,
-        QSharedPointer<QOpenGLBuffer> oSwitchAngles);
-
     int getObjectID(int x, int y);
 
-    QSharedPointer<QOpenGLShaderProgram> mProgram;
-    QSharedPointer<QOpenGLVertexArrayObject> mSwitchVAO;
-    QSharedPointer<QOpenGLBuffer> mSwitchAnglesBuffer;
-    int mSwitchNPoints;
-
-    float mSwitchAngles[16];
-    int mSwitchAnglesAspire[16];
+    std::vector<float> mSwitchAngles;
+    std::vector<int> mSwitchAnglesAspire;
     bool mWin;
 
     QMatrix4x4 mProj;
 
-    int mMVPLoc;
-    int mCamLoc;
-    int mLightPosLoc;
-
     QTime mTime;
 
     int mSize;
+
+    Object mSwitches;
 };
 
 class Switch : public QQuickFramebufferObject
