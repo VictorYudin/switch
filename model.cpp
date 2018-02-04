@@ -246,6 +246,8 @@ Model::Model(const char* iFile)
             continue;
         }
 
+        qDebug(prim.GetPath().GetText());
+
         // Get the mesh.
         UsdGeomMesh mesh(prim);
 

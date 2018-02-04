@@ -42,6 +42,7 @@ private:
     int mSize;
 
     Object mSwitches;
+    Object mBoard;
 };
 
 class Switch : public QQuickFramebufferObject

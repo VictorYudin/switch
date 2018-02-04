@@ -67,7 +67,12 @@ void SwitchRender::render()
 
     if (!mSwitches.valid())
     {
-        mSwitches.init("switch.usda", mSize);
+        mSwitches.init("switch.usda", 1, mSize);
+    }
+
+    if (!mBoard.valid())
+    {
+        mBoard.init("board.usda", 2, 1);
         mTime.start();
     }
 
@@ -114,6 +119,12 @@ void SwitchRender::render()
         QVector3D(0.0f, 500.0f, 250.0f),
         QVector3D(0.0f, 300.0f, 0.0f),
         mSwitchAngles.data());
+
+    mBoard.render(
+        mProj * camera,
+        QVector3D(0.0f, 500.0f, 250.0f),
+        QVector3D(0.0f, 300.0f, 0.0f),
+        nullptr);
 
     if (needUpdate)
     {
@@ -190,7 +201,12 @@ int SwitchRender::getObjectID(int x, int y)
 
     framebufferObject()->release();
 
-    return static_cast<int>(roundf(d[0] * 10) + roundf(d[1] * 10) * 10) - 1;
+    if (roundf(d[0] * 10) == 1)
+    {
+        return static_cast<int>(roundf(d[1] * 10) + roundf(d[2] * 10) * 10);
+    }
+
+    return -1;
 }
 
 Switch::Switch(QQuickItem* parent) :

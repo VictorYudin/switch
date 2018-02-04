@@ -14,6 +14,7 @@ static const char* vertexShaderSource =
     "uniform highp mat4 mvp;\n"
     "uniform highp vec3 camera;\n"
     "uniform highp int nrows;\n"
+    "uniform highp int id;\n"
     "out vec3 vert;\n"
     "out vec3 vertNormal;\n"
     "out vec3 color;\n"
@@ -29,11 +30,19 @@ static const char* vertexShaderSource =
     "                0.0, 0.0, 0.0, 1.0);\n"
     "}\n"
     "void main() {\n"
-    "   ivec2 index = ivec2(gl_InstanceID % nrows, gl_InstanceID / nrows);\n"
-    "   float step = 3.0 / float(nrows - 1);\n"
-    "   vec2 offset = vec2("
-    "      (-1.5 + float(index.x) * step) * 105.0, "
-    "      (-1.5 + float(index.y) * step) * 105.0);\n"
+    "   vec2 offset;\n"
+    "   if (nrows > 1)\n"
+    "   {\n"
+    "      ivec2 index = ivec2(gl_InstanceID % nrows, gl_InstanceID / nrows);\n"
+    "      float step = 3.0 / float(nrows - 1);\n"
+    "      offset = vec2("
+    "         (-1.5 + float(index.x) * step) * 105.0, "
+    "         (-1.5 + float(index.y) * step) * 105.0);\n"
+    "   }\n"
+    "   else\n"
+    "   {\n"
+    "      offset = vec2(0.0, 0.0);"
+    "   }\n"
     "   mat4 verticalFlip = mat4("
     "      1.0, 0.0, 0.0, 0.0,"
     "      0.0, -1.0, 0.0, 0.0,"
@@ -47,11 +56,11 @@ static const char* vertexShaderSource =
     "   color = vec3(0.4, 1.0, 0.0);\n"
     "   vert = vec3(world * vec4(vertex, 1.0f));\n"
     "   vertNormal = mat3(world) * normal;\n"
-    "   float floatID = float(gl_InstanceID + 1);\n"
+    "   float floatID = float(gl_InstanceID);\n"
     "   vertObjectID = vec3("
+    "      float(id) * 0.1,"
     "      mod(floatID, 10.0) * 0.1,"
-    "      floor(floatID / 10.0) * 0.1,"
-    "      0.0f);\n"
+    "      floor(floatID / 10.0) * 0.1);\n"
     "   gl_Position = verticalFlip * mvp * world * vec4(vertex, 1.0f);\n"
     "   V = vec4(camera, 1.0f) - world * vec4(vertex, 1.0f);\n"
     "}\n";
@@ -106,11 +115,12 @@ QByteArray versionCode(const char* src)
 Object::Object()
 {}
 
-void Object::init(const char* iFileName, int iRows)
+void Object::init(const char* iFileName, int iID, int iRows)
 {
     qDebug("Initializing OpenGL");
 
     mNRows = iRows;
+    mID = iID;
 
     mProgram.reset(new QOpenGLShaderProgram);
     mProgram->addShaderFromSourceCode(
@@ -123,6 +133,7 @@ void Object::init(const char* iFileName, int iRows)
     mCamLoc = mProgram->uniformLocation("camera");
     mLightPosLoc = mProgram->uniformLocation("lightPos");
     mNRowsLoc = mProgram->uniformLocation("nrows");
+    mIDLoc = mProgram->uniformLocation("id");
 
     mVAO.reset(new QOpenGLVertexArrayObject());
     mAnglesBuffer.reset(new QOpenGLBuffer());
@@ -150,6 +161,8 @@ void Object::render(
     mProgram->setUniformValue(mLightPosLoc, iLightLocation);
 
     mProgram->setUniformValue(mNRowsLoc, mNRows);
+
+    mProgram->setUniformValue(mIDLoc, mID);
 
     if (iAngles)
     {

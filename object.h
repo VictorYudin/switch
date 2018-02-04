@@ -12,7 +12,7 @@ class Object
 public:
     Object();
 
-    void init(const char* iFileName, int iRows);
+    void init(const char* iFileName, int iID, int iRows);
 
     bool valid() const { return !mVAO.isNull(); }
 
@@ -37,8 +37,10 @@ private:
     int mCamLoc;
     int mLightPosLoc;
     int mNRowsLoc;
+    int mIDLoc;
 
     int mNRows;
+    int mID;
 };
 
 #endif
