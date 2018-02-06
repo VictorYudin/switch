@@ -10,7 +10,8 @@
 static const char* vertexShaderSource =
     "layout(location = 0) in vec3 vertex;\n"
     "layout(location = 1) in vec3 normal;\n"
-    "layout(location = 2) in float angle;\n"
+    "layout(location = 2) in vec3 displayColor;\n"
+    "layout(location = 3) in float angle;\n"
     "uniform highp mat4 mvp;\n"
     "uniform highp vec3 camera;\n"
     "uniform highp int nrows;\n"
@@ -53,7 +54,7 @@ static const char* vertexShaderSource =
     "      0.0, 1.0, 0.0, 0.0,"
     "      0.0, 0.0, 1.0, 0.0,"
     "      offset.x, 0.0f, offset.y, 1.0) * rotationMatrix(angle);\n"
-    "   color = vec3(0.4, 1.0, 0.0);\n"
+    "   color = displayColor;\n"
     "   vert = vec3(world * vec4(vertex, 1.0f));\n"
     "   vertNormal = mat3(world) * normal;\n"
     "   float floatID = float(gl_InstanceID);\n"
@@ -197,17 +198,18 @@ int Object::loadModel(
     QOpenGLBuffer vbo;
     vbo.create();
     vbo.bind();
-    vbo.allocate(model.data(), sizeof(GLfloat) * model.points() * 6);
-    f->glEnableVertexAttribArray(0);
-    f->glEnableVertexAttribArray(1);
-    f->glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), 0);
-    f->glVertexAttribPointer(
-        1,
-        3,
-        GL_FLOAT,
-        GL_FALSE,
-        6 * sizeof(GLfloat),
-        reinterpret_cast<void*>(3 * sizeof(GLfloat)));
+    vbo.allocate(model.data(), sizeof(GLfloat) * model.points() * 3 * 3);
+    for (int i = 0; i < 3; i++)
+    {
+        f->glEnableVertexAttribArray(i);
+        f->glVertexAttribPointer(
+            i,
+            3,
+            GL_FLOAT,
+            GL_FALSE,
+            9 * sizeof(GLfloat),
+            reinterpret_cast<void*>(i * 3 * sizeof(GLfloat)));
+    }
 
     QOpenGLBuffer ibo(QOpenGLBuffer::IndexBuffer);
     ibo.create();
@@ -224,9 +226,9 @@ int Object::loadModel(
         oSwitchAngles->allocate(
             angles.data(),
             sizeof(decltype(angles)::value_type) * angles.size());
-        f->glEnableVertexAttribArray(2);
-        f->glVertexAttribPointer(2, 1, GL_FLOAT, GL_FALSE, 0, 0);
-        f->glVertexAttribDivisor(2, 1);
+        f->glEnableVertexAttribArray(3);
+        f->glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, 0, 0);
+        f->glVertexAttribDivisor(3, 1);
         oSwitchAngles->release();
     }
 

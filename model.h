@@ -9,7 +9,7 @@ public:
     Model(const char* iFile);
 
     float* data() { return mData.data(); }
-    int points() { return mData.size() / 6; }
+    int points() { return mData.size() / 9; }
 
     unsigned int* indexData() { return mIndexData.data(); }
     int indexes() { return mIndexData.size(); }

@@ -12,8 +12,8 @@
 #include <pxr/usd/usd/stage.h>
 #include <pxr/usd/usdGeom/mesh.h>
 #include <QCoreApplication>
-#include <QDir>
 #include <QDebug>
+#include <QDir>
 
 PXR_NAMESPACE_USING_DIRECTIVE
 
@@ -35,48 +35,47 @@ extern "C" bool (*_ReadPlugInfoObject)(
 
 struct Vertex
 {
-    // Minimal required interface ----------------------
+    // Minimal required interface for OpenSiubdiv
     Vertex() {}
 
     Vertex(Vertex const& src)
     {
-        _position[0] = src._position[0];
-        _position[1] = src._position[1];
-        _position[2] = src._position[2];
+        mPosition[0] = src.mPosition[0];
+        mPosition[1] = src.mPosition[1];
+        mPosition[2] = src.mPosition[2];
     }
 
-    void Clear(void* = 0) { _position[0] = _position[1] = _position[2] = 0.0f; }
+    void Clear(void* = 0) { mPosition[0] = mPosition[1] = mPosition[2] = 0.0f; }
 
     void AddWithWeight(Vertex const& src, float weight)
     {
-        _position[0] += weight * src._position[0];
-        _position[1] += weight * src._position[1];
-        _position[2] += weight * src._position[2];
+        mPosition[0] += weight * src.mPosition[0];
+        mPosition[1] += weight * src.mPosition[1];
+        mPosition[2] += weight * src.mPosition[2];
     }
 
-    // Public interface ------------------------------------
     void SetPosition(float x, float y, float z)
     {
-        _position[0] = x;
-        _position[1] = y;
-        _position[2] = z;
+        mPosition[0] = x;
+        mPosition[1] = y;
+        mPosition[2] = z;
     }
 
-    const float* GetPosition() const { return _position; }
+    const float* GetPosition() const { return mPosition; }
 
 private:
-    float _position[3];
+    float mPosition[3];
 };
 
 // Returns the cross product of \p v1 and \p v2.
-void cross(float const* v1, float const* v2, float* vOut)
+inline void cross(float const* v1, float const* v2, float* vOut)
 {
     vOut[0] = v1[1] * v2[2] - v1[2] * v2[1];
     vOut[1] = v1[2] * v2[0] - v1[0] * v2[2];
     vOut[2] = v1[0] * v2[1] - v1[1] * v2[0];
 }
 
-void subdivide(
+void osdSubdivide(
     int iNverts,
     int iNfaces,
     float* iVerts,
@@ -208,23 +207,6 @@ void subdivide(
     }
 }
 
-static float g_verts[8][3] = {{-50.0f, -50.0f, 50.0f},
-                              {50.0f, -50.0f, 50.0f},
-                              {-50.0f, 50.0f, 50.0f},
-                              {50.0f, 50.0f, 50.0f},
-                              {-50.0f, 50.0f, -50.0f},
-                              {50.0f, 50.0f, -50.0f},
-                              {-50.0f, -50.0f, -50.0f},
-                              {50.0f, -50.0f, -50.0f}};
-
-static int g_nverts = 8;
-static int g_nfaces = 6;
-
-static int g_vertsperface[6] = {4, 4, 4, 4, 4, 4};
-
-static int g_vertIndices[24] = {0, 1, 3, 2, 2, 3, 5, 4, 4, 5, 7, 6,
-                                6, 7, 1, 0, 1, 7, 5, 3, 6, 0, 2, 4};
-
 Model::Model(const char* iFile)
 {
     QString switchPath =
@@ -253,7 +235,7 @@ Model::Model(const char* iFile)
 
         // Get the transform.
         GfMatrix4f matrix(mesh.ComputeLocalToWorldTransform(0.0));
-        int pointsStartFrom = mData.size() / 6;
+        int pointsStartFrom = mData.size() / 9;
 
         // Get the mesh data.
         VtIntArray faceVertexCounts;
@@ -268,8 +250,7 @@ Model::Model(const char* iFile)
         VtArray<GfVec3f> normals;
 
         // Subdivide it.
-#if 1
-        subdivide(
+        osdSubdivide(
             points.size(),
             faceVertexCounts.size(),
             reinterpret_cast<float*>(points.data()),
@@ -280,21 +261,11 @@ Model::Model(const char* iFile)
             faceVertexIndices,
             points,
             normals);
-#else
-        subdivide(
-            g_nverts,
-            g_nfaces,
-            &(g_verts[0][0]),
-            g_vertsperface,
-            g_vertIndices,
-            4,
-            faceVertexCounts,
-            faceVertexIndices,
-            points,
-            normals);
-#endif
 
-        mData.reserve(mData.size() + points.size() * 3 * 2);
+        VtArray<GfVec3f> color;
+        mesh.GetDisplayColorAttr().Get(&color);
+
+        mData.reserve(mData.size() + points.size() * 3 * 3);
         for (int i = 0; i < points.size(); i++)
         {
             const GfVec3f pt = matrix.Transform(points[i]);
@@ -305,6 +276,9 @@ Model::Model(const char* iFile)
             mData.push_back(nt[0]);
             mData.push_back(nt[1]);
             mData.push_back(nt[2]);
+            mData.push_back(color[0][0]);
+            mData.push_back(color[0][1]);
+            mData.push_back(color[0][2]);
         }
 
         int numTriangles = 0;
@@ -333,6 +307,7 @@ Model::Model(const char* iFile)
                 mIndexData.push_back(
                     pointsStartFrom + faceVertexIndices[counter]);
 #else
+                // Reversed for tests
                 mIndexData.push_back(
                     pointsStartFrom + faceVertexIndices[counter]);
                 mIndexData.push_back(
