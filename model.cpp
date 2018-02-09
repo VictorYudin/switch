@@ -33,6 +33,14 @@ extern "C" bool (*_ReadPlugInfoObject)(
     const std::string& pathname,
     JsObject* result) = GoodReadPlugInfoObject;
 
+
+void GoodUSDDiagnostic(FILE* fout, const char* message)
+{
+    qDebug(message);
+}
+extern "C" void (*USDDiagnostic)(FILE* fout, const char* message) =
+    GoodUSDDiagnostic;
+
 struct Vertex
 {
     // Minimal required interface for OpenSiubdiv
