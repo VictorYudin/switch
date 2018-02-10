@@ -8,4 +8,11 @@
         <file>fastblur_internal.frag</file>
         <file>fastblur.frag</file>
     </qresource>
+    <qresource>
+        <file>board.usda</file>
+        <file>default.frag</file>
+        <file>default.vert</file>
+        <file>plugInfo.json</file>
+        <file>switch.usda</file>
+    </qresource>
 </RCC>

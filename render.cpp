@@ -67,12 +67,12 @@ void SwitchRender::render()
 
     if (!mSwitches.valid())
     {
-        mSwitches.init("switch.usda", 1, mSize);
+        mSwitches.init(":/switch.usda", 1, mSize);
     }
 
     if (!mBoard.valid())
     {
-        mBoard.init("board.usda", 2, 1);
+        mBoard.init(":/board.usda", 2, 1);
         mTime.start();
     }
 

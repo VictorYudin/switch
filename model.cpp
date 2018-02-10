@@ -14,25 +14,73 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include <QDir>
+#include <QFile>
 
 PXR_NAMESPACE_USING_DIRECTIVE
 
-extern "C" bool _DefaultReadPlugInfoObject(
-    const std::string& pathname,
-    JsObject* result);
 extern "C" bool GoodReadPlugInfoObject(
     const std::string& pathname,
     JsObject* result)
 {
-    QString plugInfoPath =
-        QDir(QCoreApplication::applicationDirPath()).filePath("plugInfo.json");
-    return _DefaultReadPlugInfoObject(plugInfoPath.toStdString(), result);
+    result->clear();
+
+    QFile plugInfoFile(":/plugInfo.json");
+    if (!plugInfoFile.open(QIODevice::ReadOnly | QIODevice::Text))
+    {
+        qDebug("Can't read plugInfo.json");
+        return false;
+    }
+
+    // The Js library doesn't allow comments, but we'd like to allow them.
+    // Strip comments, retaining empty lines so line numbers reported in parse
+    // errors match line numbers in the original file content.
+    // NOTE: Joining a vector of strings and calling JsParseString() is *much*
+    // faster than writing to a stringstream and calling JsParseStream() as of
+    // this writing.
+    std::vector<std::string> filtered;
+    QTextStream stream(&plugInfoFile);
+    while (!stream.atEnd())
+    {
+        QString line = stream.readLine();
+        if (line.contains('#'))
+        {
+            line.clear();
+        }
+        filtered.push_back(line.toStdString());
+    }
+
+    // Read JSON.
+    JsParseError error;
+    JsValue plugInfo = JsParseString(TfStringJoin(filtered, "\n"), &error);
+
+    // Validate.
+    if (plugInfo.IsNull())
+    {
+        TF_RUNTIME_ERROR(
+            "Plugin info file %s couldn't be read "
+            "(line %d, col %d): %s",
+            pathname.c_str(),
+            error.line,
+            error.column,
+            error.reason.c_str());
+    }
+    else if (!plugInfo.IsObject())
+    {
+        // The contents didn't evaluate to a json object....
+        TF_RUNTIME_ERROR(
+            "Plugin info file %s did not contain a JSON object",
+            pathname.c_str());
+    }
+    else
+    {
+        *result = plugInfo.GetJsObject();
+    }
+    return true;
 }
 
 extern "C" bool (*_ReadPlugInfoObject)(
     const std::string& pathname,
     JsObject* result) = GoodReadPlugInfoObject;
-
 
 void GoodUSDDiagnostic(FILE* fout, const char* message)
 {
@@ -217,16 +265,23 @@ void osdSubdivide(
 
 Model::Model(const char* iFile)
 {
-    QString switchPath =
-        QDir(QCoreApplication::applicationDirPath()).filePath(iFile);
+    QFile modelFile(iFile);
 
-    UsdStageRefPtr stage = UsdStage::Open(switchPath.toStdString().c_str());
-    if (!TF_VERIFY(stage, "Can't open %s", switchPath.toStdString().c_str()))
+    if (!modelFile.open(QIODevice::ReadOnly | QIODevice::Text))
     {
+        qDebug("Can't read file");
+        qDebug(iFile);
         return;
     }
 
-    qDebug(switchPath.toStdString().c_str());
+    SdfLayerRefPtr layer = SdfLayer::CreateAnonymous(iFile);
+    layer->ImportFromString(modelFile.readAll().constData());
+
+    UsdStageRefPtr stage = UsdStage::Open(layer);
+    if (!TF_VERIFY(stage, "Can't open %s", iFile))
+    {
+        return;
+    }
 
     UsdPrimRange range(stage->GetPseudoRoot());
     for (const UsdPrim& prim : range)

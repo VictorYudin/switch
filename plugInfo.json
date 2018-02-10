@@ -6,10 +6,10 @@
                     "ArResolver": {}
                 }
             },
-            "LibraryPath": "../../../../lib/ar.lib", 
+            "LibraryPath": "ar", 
             "Name": "ar", 
             "ResourcePath": "resources", 
-            "Root": "..", 
+            "Root": "./ar", 
             "Type": "library"
         },
         {
@@ -38,10 +38,10 @@
                     }
                 }
             },
-            "LibraryPath": "../../../../lib/sdf.lib",
+            "LibraryPath": "sdf",
             "Name": "sdf",
             "ResourcePath": "resources",
-            "Root": "..",
+            "Root": "./sdf",
             "Type": "library"
         },
         {
@@ -171,10 +171,10 @@
                     }
                 }
             }, 
-            "LibraryPath": "../../../../lib/usd.lib", 
+            "LibraryPath": "usd", 
             "Name": "usd", 
             "ResourcePath": "resources", 
-            "Root": "..", 
+            "Root": "./usd", 
             "Type": "library"
         },
         {
@@ -419,10 +419,10 @@
                     }
                 }
             }, 
-            "LibraryPath": "../../../../lib/usdGeom.lib", 
+            "LibraryPath": "usdGeom", 
             "Name": "usdGeom", 
             "ResourcePath": "resources", 
-            "Root": "..", 
+            "Root": "./usdGeom", 
             "Type": "library"
         },
         {
@@ -466,10 +466,10 @@
                     }
                 }
             }, 
-            "LibraryPath": "../../../../lib/usdHydra.lib", 
+            "LibraryPath": "usdHydra", 
             "Name": "usdHydra", 
             "ResourcePath": "resources", 
-            "Root": "..", 
+            "Root": "./usdHydra", 
             "Type": "library"
         },
         {
@@ -573,10 +573,10 @@
                     }
                 }
             }, 
-            "LibraryPath": "../../../../lib/usdLux.lib", 
+            "LibraryPath": "usdLux", 
             "Name": "usdLux", 
             "ResourcePath": "resources", 
-            "Root": "..", 
+            "Root": "./usdLux", 
             "Type": "library"
         },
         {
@@ -743,10 +743,10 @@
                     }
                 }
             }, 
-            "LibraryPath": "../../../../lib/usdRi.lib", 
+            "LibraryPath": "usdRi", 
             "Name": "usdRi", 
             "ResourcePath": "resources", 
-            "Root": "..", 
+            "Root": "./usdRi", 
             "Type": "library"
         },
         {
@@ -821,10 +821,10 @@
                     }
                 }
             }, 
-            "LibraryPath": "../../../../lib/usdShade.lib", 
+            "LibraryPath": "usdShade", 
             "Name": "usdShade", 
             "ResourcePath": "resources", 
-            "Root": "..", 
+            "Root": "./usdShade", 
             "Type": "library"
         },
         {
@@ -865,10 +865,10 @@
                     }
                 }
             }, 
-            "LibraryPath": "../../../../lib/usdSkel.lib", 
+            "LibraryPath": "usdSkel", 
             "Name": "usdSkel", 
             "ResourcePath": "resources", 
-            "Root": "..", 
+            "Root": "./usdSkel", 
             "Type": "library"
         },
         {
@@ -897,10 +897,10 @@
                     }
                 }
             }, 
-            "LibraryPath": "../../../../lib/usdUI.lib", 
+            "LibraryPath": "usdUI", 
             "Name": "usdUI", 
             "ResourcePath": "resources", 
-            "Root": "..", 
+            "Root": "./usdUI", 
             "Type": "library"
         }
     ]
