@@ -8,6 +8,7 @@ Item
     width: 320
     height: 480
     state: "Menu"
+    focus: true
 
     SwitchRender
     {
@@ -112,6 +113,14 @@ Item
     {
         target: game
         onWinGame:
+        {
+            root.state = "Menu"
+        }
+    }
+
+    Keys.onPressed:
+    {
+        if (event.key == Qt.Key_Escape)
         {
             root.state = "Menu"
         }
