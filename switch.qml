@@ -10,6 +10,8 @@ Item
     state: "Menu"
     focus: true
 
+    property date previousTime: new Date()
+
     SwitchRender
     {
         id: game
@@ -70,9 +72,13 @@ Item
             {
                 width: root.width/6
                 height: root.width/7
-                onClicked: {
+                onClicked:
+                {
                     root.state = "Game"
                     game.newGame()
+                    root.previousTime = new Date()
+                    stopwatch.start()
+                    timer.text = "Go go go"
                 }
                 text: "New game"
             }
@@ -109,12 +115,55 @@ Item
         }
     }
 
+    Text
+    {
+        id: timer
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.top: parent.top
+        anchors.topMargin: font.pointSize
+        color: "white"
+        opacity: 0
+        text: ""
+    }
+
+    Timer
+    {
+        id: stopwatch
+
+        interval:  1000
+        repeat:  true
+        running: false
+        triggeredOnStart: true
+
+        function zeroPad(n)
+        {
+            return (n < 10 ? "0" : "") + n
+        }
+
+        function toTime(usec)
+        {
+            var mod = Math.abs(usec)
+            return (mod >= 3600000 ? Math.floor(mod / 3600000) + ':' : '') +
+                zeroPad(Math.floor((mod % 3600000) / 60000)) + ':' +
+                zeroPad(Math.floor((mod % 60000) / 1000))
+        }
+
+        onTriggered:
+        {
+            var currentTime = new Date()
+            var delta = (currentTime.getTime() - root.previousTime.getTime())
+            timer.text = toTime(delta)
+        }
+
+    }
+
     Connections
     {
         target: game
         onWinGame:
         {
-            root.state = "Menu"
+            root.state = "Win"
+            stopwatch.stop()
         }
     }
 
@@ -134,6 +183,7 @@ Item
             PropertyChanges { target: game; enabled: true }
             PropertyChanges { target: blur; opacity: 0 }
             PropertyChanges { target: menu; opacity: 0; enabled: false }
+            PropertyChanges { target: timer; opacity: 1; font.pointSize: 15 }
         },
         State
         {
@@ -141,6 +191,15 @@ Item
             PropertyChanges { target: game; enabled: false }
             PropertyChanges { target: blur; opacity: 1 }
             PropertyChanges { target: menu; opacity: 1; enabled: true }
+            PropertyChanges { target: timer; opacity: 0; font.pointSize: 30 }
+        },
+        State
+        {
+            name: "Win"
+            PropertyChanges { target: game; enabled: false }
+            PropertyChanges { target: blur; opacity: 1 }
+            PropertyChanges { target: menu; opacity: 1; enabled: true }
+            PropertyChanges { target: timer; opacity: 1; font.pointSize: 30 }
         },
         State
         {
@@ -148,6 +207,7 @@ Item
             PropertyChanges { target: aboutButton; width: 2 * root.width / 3 }
             PropertyChanges { target: aboutButton; height: 2 * root.height / 4 }
             PropertyChanges { target: copyright; opacity: 1 }
+            PropertyChanges { target: timer; opacity: 0 }
         }
     ]
 
@@ -156,6 +216,7 @@ Item
         PropertyAnimation { property: "opacity"; duration: 500 }
         PropertyAnimation { property: "width"; duration: 500 }
         PropertyAnimation { property: "height"; duration: 500 }
+        PropertyAnimation { property: "font.pointSize"; duration: 500 }
         ColorAnimation { duration: 500 }
     }
 }
