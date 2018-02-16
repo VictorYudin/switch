@@ -1,2 +1,3 @@
+.gitignore
 _clang-format
 build.cmd
