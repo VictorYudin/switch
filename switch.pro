@@ -26,3 +26,11 @@ QMAKE_CXXFLAGS_WARN_ON -= -W3
 
 target.path = c:\temp\switch-bin
 INSTALLS += target
+
+WINRT_MANIFEST.logo_large = images/logo_150x150.png
+WINRT_MANIFEST.logo_44x44 = images/logo_44x44.png
+WINRT_MANIFEST.logo_620x300 = images/logo_620x300.png
+WINRT_MANIFEST.logo_store = images/logo_store.png
+WINRT_MANIFEST.background = images/logo_store.png
+WINRT_MANIFEST.background = $${LITERAL_HASH}2B3841
+WINRT_MANIFEST.capabilities = internetClient

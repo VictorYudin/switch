@@ -16,7 +16,7 @@ Item
         property real glowRadius: 2.0
         property real cornerRadius: rect.radius + glowRadius
         property real spread: 0.0
-        property color color: Qt.rgba(0, 0, 0, 0.75)
+        property color color: Qt.rgba(0, 0, 0, 0.5)
 
         ShaderEffect
         {

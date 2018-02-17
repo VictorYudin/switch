@@ -98,7 +98,7 @@ void SwitchRender::render()
     f->glCullFace(GL_BACK);
 
     // Clear the first AOV.
-    static const float background[] = {0.1f, 0.2f, 0.3f, 1.0f};
+    static const float background[] = {0.322f, 0.38f, 0.424f, 1.0f};
     f->glClearBufferfv(GL_COLOR, 0, background);
     // Clear the second AOV.
     static const float black[] = {0.0f, 0.0f, 0.0f, 0.0f};
