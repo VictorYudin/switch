@@ -12,7 +12,7 @@ Item
 
     property date previousTime: new Date()
 
-    SwitchRender
+    SwitchesRender
     {
         id: game
         anchors.fill: parent
@@ -52,7 +52,7 @@ Item
                 anchors.horizontalCenter: parent.horizontalCenter
 
                 font.pointSize: 48
-                text: "Switch"
+                text: "Switches"
                 color: "white"
             }
 

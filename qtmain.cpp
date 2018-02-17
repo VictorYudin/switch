@@ -30,14 +30,11 @@ int main(int argc, char** argv)
 
     QGuiApplication app(argc, argv);
 
-    // qobject_cast<QQmlExtensionPlugin*>(
-    //     qt_static_plugin_QtGraphicalEffects().instance())
-    //     ->registerTypes("QtGraphicalEffects");
-    qmlRegisterType<Switch>("MySwitch", 1, 0, "SwitchRender");
+    qmlRegisterType<Switch>("MySwitch", 1, 0, "SwitchesRender");
 
     QQuickView view;
     view.setResizeMode(QQuickView::SizeRootObjectToView);
-    view.setSource(QUrl("qrc:///switch/switch.qml"));
+    view.setSource(QUrl("qrc:///switches/switches.qml"));
     view.show();
 
     return app.exec();

@@ -1,6 +1,6 @@
 <RCC>
-    <qresource prefix="/switch">
-        <file>switch.qml</file>
+    <qresource prefix="/switches">
+        <file>switches.qml</file>
         <file>SwitchButton.qml</file>
     </qresource>
     <qresource prefix="/qt-project.org/imports/QtGraphicalEffects/shaders">

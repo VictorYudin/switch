@@ -1,5 +1,5 @@
 TEMPLATE = app
-TARGET = switch
+TARGET = Switches
 INCLUDEPATH += .
 QT += qml quick
 
@@ -16,9 +16,9 @@ HEADERS += \
     render.h \
     window.h
 
-RESOURCES += switch.qrc
+RESOURCES += switches.qrc
 
-QML_FILES += switch.qml SwitchButton.qml
+QML_FILES += switches.qml SwitchButton.qml
 
 QMAKE_CXXFLAGS += /wd4100 /wd4244 /wd4305
 QMAKE_CFLAGS_WARN_ON -= -W3
