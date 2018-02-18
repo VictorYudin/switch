@@ -3,9 +3,9 @@
 
 #include "model.h"
 
-#include <QtQuick/qquickwindow.h>
 #include <QtGui/QOpenGLContext>
 #include <QtGui/QOpenGLShaderProgram>
+#include <QtQuick/qquickwindow.h>
 
 #define GL_COLOR 0x1800
 #define GL_COLOR_ATTACHMENT1 (GL_COLOR_ATTACHMENT0 + 1)
@@ -62,6 +62,11 @@ QOpenGLFramebufferObject* SwitchRender::createFramebufferObject(
 
 void SwitchRender::render()
 {
+    static QVector3D sCameraLocation(0.0f, 500.0f, 250.0f);
+    static QVector3D sCameraLookAt(0.0f, 0.0f, 30.0f);
+    static QVector3D sUp(0.0f, 1.0f, 0.0f);
+    static QVector3D sLightLocation(-300.0f, 300.0f, 0.0f);
+
     QOpenGLExtraFunctions* f =
         QOpenGLContext::currentContext()->extraFunctions();
 
@@ -109,22 +114,12 @@ void SwitchRender::render()
     // Setup camera.
     QMatrix4x4 camera;
     camera.setToIdentity();
-    camera.lookAt(
-        QVector3D(0.0f, 500.0f, 250.0f),
-        QVector3D(0.0f, 0.0f, 30.0f),
-        QVector3D(0.0f, 1.0f, 0.0f));
+    camera.lookAt(sCameraLocation, sCameraLookAt, sUp);
 
     mSwitches.render(
-        mProj * camera,
-        QVector3D(0.0f, 500.0f, 250.0f),
-        QVector3D(0.0f, 300.0f, 0.0f),
-        mSwitchAngles.data());
+        mProj * camera, sCameraLocation, sLightLocation, mSwitchAngles.data());
 
-    mBoard.render(
-        mProj * camera,
-        QVector3D(0.0f, 500.0f, 250.0f),
-        QVector3D(0.0f, 300.0f, 0.0f),
-        nullptr);
+    mBoard.render(mProj * camera, sCameraLocation, sLightLocation, nullptr);
 
     if (needUpdate)
     {
