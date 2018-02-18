@@ -10,7 +10,7 @@ out vec3 vert;
 out vec3 vertNormal;
 out vec3 color;
 out vec3 vertObjectID;
-out vec4 V;
+out vec4 eyeVector;
 
 mat4 rotationMatrix(float a)
 {
@@ -59,5 +59,5 @@ void main()
             mod(floatID, 10.0) * 0.1,
             floor(floatID / 10.0) * 0.1);
     gl_Position = verticalFlip * mvp * world * vec4(vertex, 1.0f);
-    V = vec4(camera, 1.0f) - world * vec4(vertex, 1.0f);
+    eyeVector = vec4(camera, 1.0f) - world * vec4(vertex, 1.0f);
 }
