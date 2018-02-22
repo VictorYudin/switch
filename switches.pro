@@ -4,6 +4,7 @@ INCLUDEPATH += .
 QT += qml quick
 
 SOURCES += \
+    hdrloader.cpp \
     model.cpp \
     object.cpp \
     qtmain.cpp \
@@ -11,6 +12,7 @@ SOURCES += \
     window.cpp
 
 HEADERS += \
+    hdrloader.h \
     model.h \
     object.h \
     render.h \

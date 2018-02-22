@@ -3,12 +3,12 @@
 
 #include "model.h"
 
-#include <QtGui/QOpenGLContext>
-#include <QtGui/QOpenGLShaderProgram>
+#include <QOpenGLContext>
+#include <QOpenGLShaderProgram>
 #include <QtQuick/qquickwindow.h>
+#include <GLES3/gl3.h >
 
 #define GL_COLOR 0x1800
-#define GL_COLOR_ATTACHMENT1 (GL_COLOR_ATTACHMENT0 + 1)
 
 SwitchRender::SwitchRender() : mSize(4)
 {
@@ -18,6 +18,29 @@ SwitchRender::SwitchRender() : mSize(4)
     mSwitchAnglesAspire.resize(mSize * mSize);
 
     init();
+
+    // Load HDR environment map as a texture.
+    HDRLoader::load(":/environment.hdr", mHDRI);
+
+    glGenTextures(1, &mEnvironment);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, mEnvironment);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        GL_RGB32F,
+        mHDRI.width,
+        mHDRI.height,
+        0,
+        GL_RGB,
+        GL_FLOAT,
+        mHDRI.cols);
 }
 
 SwitchRender::~SwitchRender()
@@ -115,6 +138,10 @@ void SwitchRender::render()
     QMatrix4x4 camera;
     camera.setToIdentity();
     camera.lookAt(sCameraLocation, sCameraLookAt, sUp);
+
+    // Setup texture
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, mEnvironment);
 
     mSwitches.render(
         mProj * camera, sCameraLocation, sLightLocation, mSwitchAngles.data());

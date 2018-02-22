@@ -5,9 +5,6 @@
 #include <QOpenGLContext>
 #include <QOpenGLExtraFunctions>
 
-#define GL_COLOR 0x1800
-#define GL_COLOR_ATTACHMENT1 (GL_COLOR_ATTACHMENT0 + 1)
-
 QByteArray versionShaderCode(const QByteArray& src)
 {
     QByteArray versionedSrc;
@@ -54,6 +51,7 @@ void Object::init(const char* iFileName, int iID, int iRows)
     mLightPosLoc = mProgram->uniformLocation("lightPos");
     mNRowsLoc = mProgram->uniformLocation("nrows");
     mIDLoc = mProgram->uniformLocation("id");
+    mEnvironmentLoc = mProgram->uniformLocation("environmentSampler");
 
     mVAO.reset(new QOpenGLVertexArrayObject());
     mAnglesBuffer.reset(new QOpenGLBuffer());
@@ -83,6 +81,9 @@ void Object::render(
     mProgram->setUniformValue(mNRowsLoc, mNRows);
 
     mProgram->setUniformValue(mIDLoc, mID);
+
+    // We only have one map, so it's always 0.
+    mProgram->setUniformValue(mEnvironmentLoc, 0);
 
     if (iAngles)
     {

@@ -11,6 +11,7 @@
 #include <QTime>
 #include <QtQuick/QQuickFramebufferObject>
 #include "object.h"
+#include "hdrloader.h"
 
 class SwitchRender : public QQuickFramebufferObject::Renderer
 {
@@ -31,7 +32,9 @@ protected:
 private:
     int getObjectID(int x, int y);
 
+    // The current angle of the switches in the animation.
     std::vector<float> mSwitchAngles;
+    // The state of the switches.
     std::vector<int> mSwitchAnglesAspire;
     bool mWin;
 
@@ -43,6 +46,8 @@ private:
 
     Object mSwitches;
     Object mBoard;
+    HDRLoaderResult mHDRI;
+    GLuint mEnvironment;
 };
 
 class Switch : public QQuickFramebufferObject

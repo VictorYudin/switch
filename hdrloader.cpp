@@ -10,6 +10,7 @@ triplet.
 
 #include "hdrloader.h"
 
+#include <QFile>
 #include <math.h>
 #include <memory.h>
 #include <stdio.h>
@@ -24,27 +25,42 @@ typedef unsigned char RGBE[4];
 #define MAXELEN 0x7fff // maximum scanline length for encoding
 
 static void workOnRGBE(RGBE* scan, int len, float* cols);
-static bool decrunch(RGBE* scanline, int len, FILE* file);
-static bool oldDecrunch(RGBE* scanline, int len, FILE* file);
+static bool decrunch(RGBE* scanline, int len, QFile& file);
+static bool oldDecrunch(RGBE* scanline, int len, QFile& file);
+
+char getChar(QFile& file)
+{
+    char c;
+    file.read(&c, 1);
+    return c;
+}
+
+HDRLoaderResult::HDRLoaderResult() : width(0), height(0), cols(nullptr)
+{}
+
+HDRLoaderResult::~HDRLoaderResult()
+{
+    delete cols;
+}
 
 bool HDRLoader::load(const char* fileName, HDRLoaderResult& res)
 {
     int i;
     char str[200];
-    FILE* file;
+    QFile file(fileName);
 
-    file = fopen(fileName, "rb");
-    if (!file)
-        return false;
-
-    fread(str, 10, 1, file);
-    if (memcmp(str, "#?RADIANCE", 10))
+    if (!file.open(QIODevice::ReadOnly))
     {
-        fclose(file);
         return false;
     }
 
-    fseek(file, 1, SEEK_CUR);
+    file.read(str, 10);
+    if (memcmp(str, "#?RADIANCE", 10))
+    {
+        return false;
+    }
+
+    file.seek(file.pos() + 1);
 
     char cmd[200];
     i = 0;
@@ -52,7 +68,7 @@ bool HDRLoader::load(const char* fileName, HDRLoaderResult& res)
     while (true)
     {
         oldc = c;
-        c = fgetc(file);
+        c = getChar(file);
         if (c == 0xa && oldc == 0xa)
             break;
         cmd[i++] = c;
@@ -62,7 +78,7 @@ bool HDRLoader::load(const char* fileName, HDRLoaderResult& res)
     i = 0;
     while (true)
     {
-        c = fgetc(file);
+        c = getChar(file);
         reso[i++] = c;
         if (c == 0xa)
             break;
@@ -71,7 +87,6 @@ bool HDRLoader::load(const char* fileName, HDRLoaderResult& res)
     int w, h;
     if (!sscanf(reso, "-Y %ld +X %ld", &h, &w))
     {
-        fclose(file);
         return false;
     }
 
@@ -82,11 +97,6 @@ bool HDRLoader::load(const char* fileName, HDRLoaderResult& res)
     res.cols = cols;
 
     RGBE* scanline = new RGBE[w];
-    if (!scanline)
-    {
-        fclose(file);
-        return false;
-    }
 
     // convert image
     for (int y = h - 1; y >= 0; y--)
@@ -98,7 +108,6 @@ bool HDRLoader::load(const char* fileName, HDRLoaderResult& res)
     }
 
     delete[] scanline;
-    fclose(file);
 
     return true;
 }
@@ -123,23 +132,23 @@ void workOnRGBE(RGBE* scan, int len, float* cols)
     }
 }
 
-bool decrunch(RGBE* scanline, int len, FILE* file)
+bool decrunch(RGBE* scanline, int len, QFile& file)
 {
     int i, j;
 
     if (len < MINELEN || len > MAXELEN)
         return oldDecrunch(scanline, len, file);
 
-    i = fgetc(file);
+    i = getChar(file);
     if (i != 2)
     {
-        fseek(file, -1, SEEK_CUR);
+        file.seek(file.pos() - 1);
         return oldDecrunch(scanline, len, file);
     }
 
-    scanline[0][G] = fgetc(file);
-    scanline[0][B] = fgetc(file);
-    i = fgetc(file);
+    scanline[0][G] = getChar(file);
+    scanline[0][B] = getChar(file);
+    i = getChar(file);
 
     if (scanline[0][G] != 2 || scanline[0][B] & 128)
     {
@@ -153,37 +162,37 @@ bool decrunch(RGBE* scanline, int len, FILE* file)
     {
         for (j = 0; j < len;)
         {
-            unsigned char code = fgetc(file);
+            unsigned char code = getChar(file);
             if (code > 128)
             { // run
                 code &= 127;
-                unsigned char val = fgetc(file);
+                unsigned char val = getChar(file);
                 while (code--)
                     scanline[j++][i] = val;
             }
             else
             { // non-run
                 while (code--)
-                    scanline[j++][i] = fgetc(file);
+                    scanline[j++][i] = getChar(file);
             }
         }
     }
 
-    return feof(file) ? false : true;
+    return !file.atEnd();
 }
 
-bool oldDecrunch(RGBE* scanline, int len, FILE* file)
+bool oldDecrunch(RGBE* scanline, int len, QFile& file)
 {
     int i;
     int rshift = 0;
 
     while (len > 0)
     {
-        scanline[0][R] = fgetc(file);
-        scanline[0][G] = fgetc(file);
-        scanline[0][B] = fgetc(file);
-        scanline[0][E] = fgetc(file);
-        if (feof(file))
+        scanline[0][R] = getChar(file);
+        scanline[0][G] = getChar(file);
+        scanline[0][B] = getChar(file);
+        scanline[0][E] = getChar(file);
+        if (file.atEnd())
             return false;
 
         if (scanline[0][R] == 1 && scanline[0][G] == 1 && scanline[0][B] == 1)

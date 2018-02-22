@@ -38,6 +38,7 @@ private:
     int mLightPosLoc;
     int mNRowsLoc;
     int mIDLoc;
+    int mEnvironmentLoc;
 
     int mNRows;
     int mID;

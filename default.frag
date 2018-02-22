@@ -6,6 +6,9 @@ in highp vec3 vertNormal;
 in highp vec3 color;
 in highp vec3 vertObjectID;
 in highp vec4 eyeVector;
+
+uniform sampler2D environmentSampler;
+
 layout(location = 0) out highp vec4 fragColor;
 layout(location = 1) out highp vec4 objectID;
 
@@ -205,17 +208,18 @@ highp vec3 ggxBRDF(
     return F * G * D / (4.0f * NdotV * NdotL);
 }
 
+highp vec2 envToUV(highp vec3 dir)
+{
+    return vec2(
+        (atan(dir.x / dir.z) + M_PI) / (2.0 * M_PI),
+        (asin(-dir.y) + M_PI / 2.0) / M_PI);
+}
+
 void main()
 {
     highp vec3 reflectance = vec3(color);
     highp vec3 edge = vec3(1.0, 1.0, 1.0) - vec3(1.0, 0.25, 0.0) * 0.01;
     highp float roughness = 0.12;
-
-    highp vec3 Ln = normalize(lightPos - vert);
-    highp vec3 Nn = normalize(vertNormal);
-    highp vec3 Vn = normalize(eyeVector.xyz);
-
-    highp vec3 diffuse = color * 0.5 * max(dot(Nn, Ln), 0.0);
 
     // Convert user-friendly reflectance and edge color to n and k of the
     // complex index of refraction.
@@ -225,8 +229,20 @@ void main()
     highp vec3 etan = vec3(etaR.x, etaG.x, etaB.x);
     highp vec3 etak = vec3(etaR.y, etaR.y, etaR.y);
 
+    highp vec3 Ln = normalize(lightPos - vert);
+    highp vec3 Nn = normalize(vertNormal);
+    highp vec3 Vn = normalize(eyeVector.xyz);
+    highp vec3 R = normalize(reflect(-Vn, Nn));
+
+    highp vec3 diffuse = color * 0.25 * max(dot(Nn, Ln), 0.0);
+
+    highp vec3 reflection =
+        pow(texture(environmentSampler, envToUV(R)).xyz,
+            vec3(0.454545, 0.454545, 0.454545));
+    reflection *= fresnelDieletricConductor(etan, etak, dot(Nn, Vn));
+
     highp vec3 specular = ggxBRDF(Nn, Vn, Ln, roughness, etan, etak);
 
-    fragColor = vec4(diffuse + specular, 1.0);
+    fragColor = vec4(diffuse + reflection + specular, 1.0);
     objectID = vec4(vertObjectID, 1.0f);
 }
