@@ -1,6 +1,8 @@
 #ifndef __RENDER_H_
 #define __RENDER_H_
 
+#include "hdrloader.h"
+#include "object.h"
 #include <QOpenGLBuffer>
 #include <QOpenGLExtraFunctions>
 #include <QOpenGLFramebufferObject>
@@ -10,8 +12,6 @@
 #include <QSharedPointer>
 #include <QTime>
 #include <QtQuick/QQuickFramebufferObject>
-#include "object.h"
-#include "hdrloader.h"
 
 class SwitchRender : public QQuickFramebufferObject::Renderer
 {
@@ -31,6 +31,9 @@ protected:
 
 private:
     int getObjectID(int x, int y);
+
+    qint64 mElapsed[10];
+    size_t mCurrentElapsed;
 
     // The current angle of the switches in the animation.
     std::vector<float> mSwitchAngles;
@@ -54,9 +57,22 @@ class Switch : public QQuickFramebufferObject
 {
     Q_OBJECT
 
+    // Elapsed time to draw one frime
+    Q_PROPERTY(int elapsed READ elapsed WRITE setElapsed NOTIFY elapsedChanged)
+
 public:
     Switch(QQuickItem* parent = Q_NULLPTR);
     Renderer* createRenderer() const;
+
+    void setElapsed(float elapsed)
+    {
+        if (elapsed != mElapsed)
+        {
+            mElapsed = elapsed;
+            emit elapsedChanged();
+        }
+    }
+    float elapsed() const { return mElapsed; }
 
 protected:
     virtual void mousePressEvent(QMouseEvent* ev) Q_DECL_OVERRIDE;
@@ -64,6 +80,7 @@ protected:
 
 signals:
     void winGame();
+    void elapsedChanged();
 
 public slots:
     void newGame();
@@ -74,6 +91,8 @@ private:
     int mLastClickX;
     int mLastClickY;
     bool mNewGamePressed;
+
+    float mElapsed;
 };
 
 #endif

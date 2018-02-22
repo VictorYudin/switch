@@ -129,6 +129,16 @@ Item
         text: ""
     }
 
+    Text
+    {
+        id: elapsed
+        anchors.horizontalCenter: parent.horizontalCenter
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: font.pointSize
+        color: "white"
+        text: game.elapsed + " ms"
+    }
+
     Timer
     {
         id: stopwatch

@@ -3,14 +3,15 @@
 
 #include "model.h"
 
+#include <GLES3/gl3.h >
+#include <QElapsedTimer>
 #include <QOpenGLContext>
 #include <QOpenGLShaderProgram>
 #include <QtQuick/qquickwindow.h>
-#include <GLES3/gl3.h >
 
 #define GL_COLOR 0x1800
 
-SwitchRender::SwitchRender() : mSize(4)
+SwitchRender::SwitchRender() : mSize(4), mElapsed{}, mCurrentElapsed(0)
 {
     srand(time(NULL));
 
@@ -104,6 +105,9 @@ void SwitchRender::render()
         mTime.start();
     }
 
+    QElapsedTimer timer;
+    timer.start();
+
     float delta = float(mTime.restart()) * 0.003f;
     bool needUpdate = false;
 
@@ -153,10 +157,16 @@ void SwitchRender::render()
         // We need to call this function once again.
         update();
     }
+
+    mElapsed[mCurrentElapsed] = timer.elapsed();
+    mCurrentElapsed = (mCurrentElapsed + 1) % 10;
 }
 
 void SwitchRender::synchronize(QQuickFramebufferObject* item)
 {
+    reinterpret_cast<Switch*>(item)->setElapsed(
+        std::accumulate(mElapsed, mElapsed + 10, 0) / 10);
+
     if (mWin)
     {
         return;
