@@ -13,6 +13,8 @@
         <file>board.usda.index.cache</file>
         <file>default.frag</file>
         <file>default.vert</file>
+        <file>beauty.frag</file>
+        <file>beauty.vert</file>
         <file>environment.hdr</file>
         <file>plugInfo.json</file>
         <file>switch.usda.data.cache</file>

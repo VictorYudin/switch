@@ -7,6 +7,8 @@
 #include <QOpenGLVertexArrayObject>
 #include <QSharedPointer>
 
+QByteArray versionShaderCode(const QByteArray& src);
+
 class Object
 {
 public:
@@ -18,9 +20,7 @@ public:
 
     void render(
         const QMatrix4x4& iMVP,
-        const QVector3D& iCameraLocation,
-        const QVector3D& iLightLocation,
-        const float* iAngles);
+        const float* iAngles)const;
 
 private:
     int loadModel(
@@ -34,11 +34,8 @@ private:
     int mNPoints;
 
     int mMVPLoc;
-    int mCamLoc;
-    int mLightPosLoc;
     int mNRowsLoc;
     int mIDLoc;
-    int mEnvironmentLoc;
 
     int mNRows;
     int mID;

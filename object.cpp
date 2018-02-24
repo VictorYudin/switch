@@ -23,7 +23,7 @@ Object::Object()
 
 void Object::init(const char* iFileName, int iID, int iRows)
 {
-    qDebug("Initializing OpenGL");
+    qDebug(iFileName);
 
     QFile vertexShader(":/default.vert");
     QFile fragmantShader(":/default.frag");
@@ -47,22 +47,15 @@ void Object::init(const char* iFileName, int iID, int iRows)
     mProgram->link();
 
     mMVPLoc = mProgram->uniformLocation("mvp");
-    mCamLoc = mProgram->uniformLocation("camera");
-    mLightPosLoc = mProgram->uniformLocation("lightPos");
     mNRowsLoc = mProgram->uniformLocation("nrows");
     mIDLoc = mProgram->uniformLocation("id");
-    mEnvironmentLoc = mProgram->uniformLocation("environmentSampler");
 
     mVAO.reset(new QOpenGLVertexArrayObject());
     mAnglesBuffer.reset(new QOpenGLBuffer());
     mNPoints = loadModel(iFileName, mVAO, mAnglesBuffer);
 }
 
-void Object::render(
-    const QMatrix4x4& iMVP,
-    const QVector3D& iCameraLocation,
-    const QVector3D& iLightLocation,
-    const float* iAngles)
+void Object::render(const QMatrix4x4& iMVP, const float* iAngles) const
 {
     QOpenGLExtraFunctions* f =
         QOpenGLContext::currentContext()->extraFunctions();
@@ -71,19 +64,8 @@ void Object::render(
 
     // Set transform.
     mProgram->setUniformValue(mMVPLoc, iMVP);
-
-    // Cat camera position.
-    mProgram->setUniformValue(mCamLoc, iCameraLocation);
-
-    // Setup light position.
-    mProgram->setUniformValue(mLightPosLoc, iLightLocation);
-
     mProgram->setUniformValue(mNRowsLoc, mNRows);
-
     mProgram->setUniformValue(mIDLoc, mID);
-
-    // We only have one map, so it's always 0.
-    mProgram->setUniformValue(mEnvironmentLoc, 0);
 
     if (iAngles)
     {
