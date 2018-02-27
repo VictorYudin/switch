@@ -1,3 +1,5 @@
+// Copyright 2018 Victor Yudin. All rights reserved.
+
 import QtQuick 2.7
 
 Item

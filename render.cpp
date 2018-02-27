@@ -1,3 +1,4 @@
+// Copyright 2018 Victor Yudin. All rights reserved.
 
 #include "render.h"
 

@@ -1,3 +1,5 @@
+// Copyright 2018 Victor Yudin. All rights reserved.
+
 #ifndef __MODEL_H_
 #define __MODEL_H_
 

@@ -1,3 +1,5 @@
+<!-- Copyright 2018 Victor Yudin. All rights reserved. -->
+
 <RCC>
     <qresource prefix="/switches">
         <file>switches.qml</file>

@@ -1,3 +1,5 @@
+// Copyright 2018 Victor Yudin. All rights reserved.
+
 in highp vec3 fragP;
 in highp vec3 fragN;
 in highp vec3 fragC;

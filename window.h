@@ -1,3 +1,5 @@
+// Copyright 2018 Victor Yudin. All rights reserved.
+
 #ifndef __WINDOWS_H_
 #define __WINDOWS_H_
 

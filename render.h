@@ -1,3 +1,5 @@
+// Copyright 2018 Victor Yudin. All rights reserved.
+
 #ifndef __RENDER_H_
 #define __RENDER_H_
 

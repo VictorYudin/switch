@@ -1,3 +1,5 @@
+// Copyright 2018 Victor Yudin. All rights reserved.
+
 in highp vec2 uv;
 
 uniform highp vec3 gLightPos;

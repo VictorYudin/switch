@@ -1,3 +1,5 @@
+// Copyright 2018 Victor Yudin. All rights reserved.
+
 #include "window.h"
 
 #define _USE_MATH_DEFINES
