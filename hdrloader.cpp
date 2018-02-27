@@ -116,7 +116,7 @@ float convertComponent(int expo, int val)
 {
     float v = val / 256.0f;
     float d = (float)pow(2, expo);
-    return v * d;
+    return pow(v * d, 1.0f / 2.2f);
 }
 
 void workOnRGBE(RGBE* scan, int len, float* cols)

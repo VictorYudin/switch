@@ -6,6 +6,7 @@ uniform sampler2D gSamplerP;
 uniform sampler2D gSamplerN;
 uniform sampler2D gSamplerC;
 uniform sampler2D gSamplerEnv;
+uniform highp mat4 gMVP;
 
 layout(location = 0) out highp vec4 Ci;
 
@@ -205,6 +206,13 @@ highp vec3 ggxBRDF(
     return F * G * D / (4.0f * NdotV * NdotL);
 }
 
+/**
+ * @brief Converts direction to the latitude/longitude.
+ *
+ * @param dir The xyz vector
+ *
+ * @return The latitude/longitude direction.
+ */
 highp vec2 envToUV(highp vec3 dir)
 {
     return vec2(
@@ -212,9 +220,85 @@ highp vec2 envToUV(highp vec3 dir)
         (asin(-dir.y) + M_PI / 2.0) / M_PI);
 }
 
-highp vec3 gammaCorrection(highp vec3 iColor, highp float iGamma)
+/**
+ * @brief Compute the specular component of the surface.
+ *
+ * @return The specular component.
+ */
+highp vec3 reflectionComponent(
+    highp vec3 iL,
+    highp vec3 iN,
+    highp vec3 iV,
+    highp vec3 iReflectance,
+    highp vec3 iEdge,
+    highp float iRoughness)
 {
-    return pow(iColor, vec3(iGamma, iGamma, iGamma));
+    // Convert user-friendly reflectance and edge color to n and k of the
+    // complex index of refraction.
+    highp vec2 etaR = gulbrandsenMapping(iReflectance.r, iEdge.r);
+    highp vec2 etaG = gulbrandsenMapping(iReflectance.g, iEdge.g);
+    highp vec2 etaB = gulbrandsenMapping(iReflectance.b, iEdge.b);
+    highp vec3 etan = vec3(etaR.x, etaG.x, etaB.x);
+    highp vec3 etak = vec3(etaR.y, etaR.y, etaR.y);
+
+    highp vec3 R = normalize(reflect(-iV, iN));
+
+    highp float theta = max(dot(iN, iV), 0.0);
+
+    // Environment.
+    highp vec3 reflection = texture(gSamplerEnv, envToUV(R)).xyz *
+        fresnelDieletricConductor(etan, etak, theta);
+
+    // GGX specular.
+    highp vec3 specular = ggxBRDF(iN, iV, iL, iRoughness, etan, etak);
+
+    return reflection + specular;
+}
+
+/**
+ * @brief Ray-marching.
+ *
+ * @param iP The ray origin.
+ * @param iDir The ray direction.
+ * @param maxlength The maximum tracing distance.
+ *
+ * @return The UV coordinate of the intersection of the ray and the scene.
+ */
+highp vec2 trace(highp vec3 iP, highp vec3 iDir, highp float maxlength)
+{
+    highp float ray = 0.0;
+    highp float delta = 1.25;
+    highp float distanceCurrent;
+    highp float distanceExpected;
+    highp vec2 Pscreen;
+    do
+    {
+        ray += delta;
+        if (ray > maxlength)
+        {
+            return vec2(0.0, 0.0);
+        }
+
+        highp vec3 origin = iP + iDir * ray;
+        delta *= 1.025;
+
+        highp vec4 Pndc = gMVP * vec4(origin, 1);
+        Pndc /= Pndc.w;
+
+        Pscreen = Pndc.xy / 2. + 0.5;
+        if (Pscreen.x > 1. || Pscreen.x < 0. || Pscreen.y > 1. ||
+            Pscreen.y < 0.)
+        {
+            return vec2(0.0, 0.0);
+        }
+
+        highp vec3 P = texture(gSamplerP, Pscreen).xyz;
+
+        distanceExpected = length(P.xyz - gE);
+        distanceCurrent = length(origin.xyz - gE);
+    } while (distanceExpected > distanceCurrent);
+
+    return Pscreen;
 }
 
 void main()
@@ -229,34 +313,70 @@ void main()
 
     if (color.w == 0.0)
     {
+        // We are here because there is no geo. Return environment.
         highp vec3 In = normalize(P - gE);
-        highp vec3 environment =
-            gammaCorrection(texture(gSamplerEnv, envToUV(In)).xyz, 0.454545);
+        highp vec3 environment = texture(gSamplerEnv, envToUV(In)).xyz;
         Ci = vec4(environment, 1.0);
     }
     else
     {
-        // Convert user-friendly reflectance and edge color to n and k of the
-        // complex index of refraction.
-        highp vec2 etaR = gulbrandsenMapping(reflectance.r, edge.r);
-        highp vec2 etaG = gulbrandsenMapping(reflectance.g, edge.g);
-        highp vec2 etaB = gulbrandsenMapping(reflectance.b, edge.b);
-        highp vec3 etan = vec3(etaR.x, etaG.x, etaB.x);
-        highp vec3 etak = vec3(etaR.y, etaR.y, etaR.y);
-
-        highp vec3 Ln = normalize(gLightPos - P);
         highp vec3 Nn = texture(gSamplerN, frame).xyz;
         highp vec3 Vn = normalize(gE - P);
+        highp vec3 Ln = normalize(gLightPos - P);
         highp vec3 R = normalize(reflect(-Vn, Nn));
 
         highp vec3 diffuse = color.xyz * 0.25 * max(dot(Nn, Ln), 0.0);
 
-        highp vec3 reflection =
-            gammaCorrection(texture(gSamplerEnv, envToUV(R)).xyz, 0.454545);
-        reflection *= fresnelDieletricConductor(etan, etak, dot(Nn, Vn));
+        // Reflection. First, try to trace.
+        highp vec2 traced = trace(P, R, 50.0);
 
-        highp vec3 specular = ggxBRDF(Nn, Vn, Ln, roughness, etan, etak);
+        highp vec3 reflection;
+        highp float tracedWeight = 1.0;
+        if (traced.x > 0.0 && traced.y > 0.0)
+        {
+            highp vec4 tracedC = texture(gSamplerC, traced);
+            if (tracedC.w > 0.0)
+            {
+                highp vec3 tracedReflectance = tracedC.xyz;
 
-        Ci = vec4(diffuse + reflection + specular, 1.0);
+                // Convert user-friendly reflectance and edge color to n and k
+                // of the complex index of refraction.
+                // TODO: We compute the same indexes twice.
+                highp vec2 etaR = gulbrandsenMapping(reflectance.r, edge.r);
+                highp vec2 etaG = gulbrandsenMapping(reflectance.g, edge.g);
+                highp vec2 etaB = gulbrandsenMapping(reflectance.b, edge.b);
+                highp vec3 etan = vec3(etaR.x, etaG.x, etaB.x);
+                highp vec3 etak = vec3(etaR.y, etaR.y, etaR.y);
+
+                highp vec3 tracedP = texture(gSamplerP, traced).xyz;
+                highp float traceLenght = length(P - tracedP);
+                highp vec3 tracedNn = texture(gSamplerN, traced).xyz;
+                highp vec3 tracedLn = normalize(gLightPos - tracedP);
+
+                highp float theta = max(dot(Nn, Vn), 0.0);
+
+                // TODO: We compute the same fresnel twice.
+                reflection = reflectionComponent(
+                                 tracedLn,
+                                 tracedNn,
+                                 -R,
+                                 tracedReflectance,
+                                 edge,
+                                 roughness) *
+                    fresnelDieletricConductor(etan, etak, theta);
+                tracedWeight = traceLenght * 0.02;
+                tracedWeight *= tracedWeight;
+            }
+        }
+
+        if (tracedWeight > 0.0)
+        {
+            // Get the environment and specular and mix it with the reflection.
+            reflection = reflection * (1.0 - tracedWeight) +
+                reflectionComponent(Ln, Nn, Vn, reflectance, edge, roughness) *
+                    tracedWeight;
+        }
+
+        Ci = vec4(diffuse + reflection, 1.0);
     }
 }

@@ -1,11 +1,11 @@
 #ifndef __OBJECT_H_
 #define __OBJECT_H_
 
-#include <model.h>
 #include <QOpenGLBuffer>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLVertexArrayObject>
 #include <QSharedPointer>
+#include <model.h>
 
 QByteArray versionShaderCode(const QByteArray& src);
 
@@ -18,9 +18,7 @@ public:
 
     bool valid() const { return !mVAO.isNull(); }
 
-    void render(
-        const QMatrix4x4& iMVP,
-        const float* iAngles)const;
+    void render(const QMatrix4x4& iMVP, const float* iAngles) const;
 
 private:
     int loadModel(

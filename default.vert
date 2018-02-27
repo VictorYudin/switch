@@ -1,6 +1,6 @@
 layout(location = 0) in vec3 vertex;
 layout(location = 1) in vec3 normal;
-layout(location = 2) in vec3 displayfragC;
+layout(location = 2) in vec3 displayColor;
 layout(location = 3) in float angle;
 uniform highp mat4 mvp;
 uniform highp int nrows;
@@ -32,6 +32,7 @@ void main()
     vec2 offset;
     if (nrows > 1)
     {
+        // Getting the 2d index from the instance ID.
         ivec2 index = ivec2(gl_InstanceID % nrows, gl_InstanceID / nrows);
         float step = 3.0 / float(nrows - 1);
         offset = vec2(
@@ -40,12 +41,13 @@ void main()
     }
     else
     {
+        // No instances. There is only one object.
         offset = vec2(0.0, 0.0);
     }
 
     mat4 local = translationMatrix(offset) * rotationMatrix(angle);
 
-    fragC = displayfragC;
+    fragC = displayColor;
     fragP = vec3(local * vec4(vertex, 1.0f));
     fragN = mat3(local) * normal;
     float floatID = float(gl_InstanceID);

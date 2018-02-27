@@ -10,6 +10,7 @@
 #include <QtQuick/qquickwindow.h>
 #include <assert.h>
 
+// Qt doesn't have it
 #define GL_COLOR 0x1800
 
 SwitchRender::SwitchRender() :
@@ -23,14 +24,18 @@ SwitchRender::SwitchRender() :
 
     srand(time(NULL));
 
+    // The current angles of the switches in the animation.
     mSwitchAngles.resize(mSize * mSize);
+    // The state of the switches.
     mSwitchAnglesAspire.resize(mSize * mSize);
 
+    // Fill the states with random data.
     init();
 
     // Load HDR environment map as a texture.
     HDRLoader::load(":/environment.hdr", mHDRI);
 
+    // Init environment texture.
     f->glGenTextures(1, &mEnvironment);
     f->glActiveTexture(GL_TEXTURE0);
     f->glBindTexture(GL_TEXTURE_2D, mEnvironment);
@@ -51,8 +56,12 @@ SwitchRender::SwitchRender() :
         GL_FLOAT,
         mHDRI.cols);
 
+    // Init the OpenGL buffers to draw one polygon that covers the screen and is
+    // used to draw the second pass.
     initPlane();
 
+    // Initialize the shader program that mixes all the AOVs togeter on the
+    // second pass.
     QFile vertexShader(":/beauty.vert");
     QFile fragmantShader(":/beauty.frag");
     if (!vertexShader.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -71,12 +80,14 @@ SwitchRender::SwitchRender() :
         QOpenGLShader::Fragment, versionShaderCode(fragmantShader.readAll()));
     mBeautyProgram->link();
 
+    // Get locations of the unform data of the initialized shader.
     mShaderLightPos = mBeautyProgram->uniformLocation("gLightPos");
     mShaderEPos = mBeautyProgram->uniformLocation("gE");
     mShaderPPos = mBeautyProgram->uniformLocation("gSamplerP");
     mShaderNPos = mBeautyProgram->uniformLocation("gSamplerN");
     mShaderCPos = mBeautyProgram->uniformLocation("gSamplerC");
     mShaderEnvPos = mBeautyProgram->uniformLocation("gSamplerEnv");
+    mShaderMVPPos = mBeautyProgram->uniformLocation("gMVP");
 }
 
 SwitchRender::~SwitchRender()
@@ -217,8 +228,8 @@ void SwitchRender::initPlane()
     // These are 4 UVs.
     static const GLfloat uvs[] = {0.f, 0.f, 1.f, 0.f, 1.f, 1.f, 0.f, 1.f};
 
-    // Create a vertex buffer object. It stores an array of data on the
-    // graphics adapter's memory. The vertex points in our case.
+    // Create a vertex buffer object. It stores an array of data on the graphics
+    // adapter's memory. The vertex points in our case.
     f->glGenBuffers(1, &mPointBuffer);
     f->glBindBuffer(GL_ARRAY_BUFFER, mPointBuffer);
     f->glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW);
@@ -235,11 +246,10 @@ void SwitchRender::initPlane()
     f->glBindVertexArray(mVertexArray);
 }
 
-void SwitchRender::renderBakePass(const QVector3D& iCameraLocation) const
+void SwitchRender::renderBakePass(
+    const QVector3D& iCameraLocation,
+    const QMatrix4x4& iMVP) const
 {
-    static QVector3D sCameraLookAt(0.0f, 0.0f, 30.0f);
-    static QVector3D sUp(0.0f, 1.0f, 0.0f);
-
     QOpenGLExtraFunctions* f =
         QOpenGLContext::currentContext()->extraFunctions();
 
@@ -258,22 +268,19 @@ void SwitchRender::renderBakePass(const QVector3D& iCameraLocation) const
     // Clear the depth buffer.
     f->glClear(GL_DEPTH_BUFFER_BIT);
 
-    // Setup camera.
-    QMatrix4x4 camera;
-    camera.setToIdentity();
-    camera.lookAt(iCameraLocation, sCameraLookAt, sUp);
-
-    // Setup texture
+    // Setup texture.
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, mEnvironment);
 
-    mSwitches.render(mProj * camera, mSwitchAngles.data());
-    mBoard.render(mProj * camera, nullptr);
+    // Render the geometry.
+    mSwitches.render(iMVP, mSwitchAngles.data());
+    mBoard.render(iMVP, nullptr);
 }
 
 void SwitchRender::renderBeautyPass(
     const QVector3D& iCameraLocation,
-    const QVector3D& iLightLocation) const
+    const QVector3D& iLightLocation,
+    const QMatrix4x4& iMVP) const
 {
     assert(mVertexArray);
     assert(mPointBuffer);
@@ -288,12 +295,15 @@ void SwitchRender::renderBeautyPass(
     f->glDepthMask(GL_FALSE);
 
     mBeautyProgram->bind();
+
+    // Setup uniform data.
     mBeautyProgram->setUniformValue(mShaderNPos, 0);
     mBeautyProgram->setUniformValue(mShaderPPos, 1);
     mBeautyProgram->setUniformValue(mShaderEnvPos, 2);
     mBeautyProgram->setUniformValue(mShaderCPos, 3);
     // Setup camera position.
     mBeautyProgram->setUniformValue(mShaderEPos, iCameraLocation);
+    mBeautyProgram->setUniformValue(mShaderMVPPos, iMVP);
     // Setup light position.
     mBeautyProgram->setUniformValue(mShaderLightPos, iLightLocation);
 
@@ -317,8 +327,7 @@ void SwitchRender::renderBeautyPass(
     f->glActiveTexture(GL_TEXTURE0);
     f->glBindTexture(GL_TEXTURE_2D, mPrepassTexN);
 
-    // Draw points 0-4 from the currently bound VAO with current in-use
-    // shader.
+    // Draw points 0-4 from the currently bound VAO with current in-use shader.
     f->glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }
 
@@ -355,6 +364,8 @@ void SwitchRender::render()
     f->glBindFramebuffer(GL_FRAMEBUFFER, mPrepassFBO);
 
     static QVector3D sCameraLocation(0.0f, 500.0f, 250.0f);
+    static QVector3D sCameraLookAt(0.0f, 0.0f, 30.0f);
+    static QVector3D sUp(0.0f, 1.0f, 0.0f);
     static QVector3D sLightLocation(-300.0f, 300.0f, 0.0f);
 
     if (!mSwitches.valid())
@@ -385,11 +396,19 @@ void SwitchRender::render()
         }
     }
 
-    renderBakePass(sCameraLocation);
+    // Setup camera.
+    QMatrix4x4 camera;
+    camera.setToIdentity();
+    camera.lookAt(sCameraLocation, sCameraLookAt, sUp);
+
+    QMatrix4x4 mvp = mProj * camera;
+
+    // Prepass. It will render point positions, normals, IDs to the AOVs.
+    renderBakePass(sCameraLocation, mvp);
 
     // Beauty pass
     f->glBindFramebuffer(GL_FRAMEBUFFER, prevFbo);
-    renderBeautyPass(sCameraLocation, sLightLocation);
+    renderBeautyPass(sCameraLocation, sLightLocation, mvp);
 
     if (needUpdate)
     {
@@ -408,13 +427,16 @@ void SwitchRender::synchronize(QQuickFramebufferObject* item)
 
     if (mWin)
     {
+        // The user already won. Just lock the game.
         return;
     }
 
     Switch* sw = reinterpret_cast<Switch*>(item);
 
+    // Check if the user clicked.
     if (sw->mLastClickX > 0 && sw->mLastClickY > 0)
     {
+        // Check if the user clicked by one of the switches.
         int ID = getObjectID(sw->mLastClickX, sw->mLastClickY);
 
         sw->mLastClickX = -1;
@@ -427,6 +449,7 @@ void SwitchRender::synchronize(QQuickFramebufferObject* item)
 
             int wrongPlaced = 0;
 
+            // Move the switches to the new position.
             for (int i = 0; i < mSize; i++)
             {
                 for (int j = 0; j < mSize; j++)
@@ -442,6 +465,7 @@ void SwitchRender::synchronize(QQuickFramebufferObject* item)
                 }
             }
 
+            // If everything placed good, then the user wins.
             if (wrongPlaced == 0)
             {
                 emit sw->winGame();
@@ -508,6 +532,15 @@ QQuickFramebufferObject::Renderer* Switch::createRenderer() const
     qDebug("No OpenGL, no renderer");
     return nullptr;
 #endif
+}
+
+void Switch::setElapsed(float elapsed)
+{
+    if (elapsed != mElapsed)
+    {
+        mElapsed = elapsed;
+        emit elapsedChanged();
+    }
 }
 
 void Switch::mousePressEvent(QMouseEvent* ev)

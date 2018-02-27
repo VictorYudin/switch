@@ -13,20 +13,39 @@
 #include <QTime>
 #include <QtQuick/QQuickFramebufferObject>
 
+/** @brief The main OpenGL object. OpenGL starts here. */
 class SwitchRender : public QQuickFramebufferObject::Renderer
 {
 public:
     SwitchRender();
     ~SwitchRender();
 
+    /** @brief Fills mSwitchAngles with random data. Is used to start a new
+     * game. */
     void init();
 
+    /**
+     * @brief Is called when a new QQuickFramebufferObject is needed. This
+     * happens on the initial frame. It is called again every time the
+     * dimensions of the item changes.
+     *
+     * @param size The new dimension.
+     *
+     * @return Create framebuffer object.
+     */
     QOpenGLFramebufferObject* createFramebufferObject(const QSize& size)
         Q_DECL_OVERRIDE;
 
+    /** @brief This function is called when this object should be rendered. */
     void render() Q_DECL_OVERRIDE;
 
 protected:
+    /**
+     * @brief This function is called as a result of
+     * QQuickFramebufferObject::update().
+     *
+     * @param item The parent item.
+     */
     void synchronize(QQuickFramebufferObject* item) Q_DECL_OVERRIDE;
 
 private:
@@ -70,25 +89,29 @@ private:
      * @brief Render the first pass that bakes the data.
      *
      * @param iCameraLocation The position of the camera.
+     * @param iMVP The Movel View Projection matrix.
      */
     void renderBakePass(
-        const QVector3D& iCameraLocation) const;
+        const QVector3D& iCameraLocation,
+        const QMatrix4x4& iMVP) const;
 
     /**
      * @brief Render the second pass that generates the beauty image.
      *
      * @param iCameraLocation The position of the camera.
      * @param iLightLocation The position of the light.
+     * @param iMVP The Movel View Projection matrix.
      */
     void renderBeautyPass(
         const QVector3D& iCameraLocation,
-        const QVector3D& iLightLocation) const;
+        const QVector3D& iLightLocation,
+        const QMatrix4x4& iMVP) const;
 
     // Timer stuff. We keep 10 last times to compute average time.
     qint64 mElapsed[10];
     size_t mCurrentElapsed;
 
-    // The current angle of the switches in the animation.
+    // The current angles of the switches in the animation.
     std::vector<float> mSwitchAngles;
     // The state of the switches.
     std::vector<int> mSwitchAnglesAspire;
@@ -104,11 +127,16 @@ private:
     // The number of rows and columns in the game. Usually it's 4.
     int mSize;
 
+    // The object that represents all the switches.
     Object mSwitches;
+    // The object that represents the board.
     Object mBoard;
+    // HDRI map.
     HDRLoaderResult mHDRI;
+    // OpenGL texture ID with the environment.
     GLuint mEnvironment;
 
+    // Framebuffer and AOVs of the first pass.
     GLuint mPrepassFBO;
     GLuint mPrepassTexID;
     GLuint mPrepassTexP;
@@ -116,6 +144,8 @@ private:
     GLuint mPrepassTexC;
     GLuint mPrepassDepth;
 
+    // The shader program and uniform locations of the first pass, that mixes
+    // all the AOVs together.
     QSharedPointer<QOpenGLShaderProgram> mBeautyProgram;
     int mShaderLightPos;
     int mShaderEPos;
@@ -123,8 +153,7 @@ private:
     int mShaderNPos;
     int mShaderCPos;
     int mShaderEnvPos;
-
-    QSharedPointer<QOpenGLVertexArrayObject> mPlaneVAO;
+    int mShaderMVPPos;
 
     // OpenGL gometry buffers.
     GLuint mVertexArray;
@@ -143,14 +172,11 @@ public:
     Switch(QQuickItem* parent = Q_NULLPTR);
     Renderer* createRenderer() const;
 
-    void setElapsed(float elapsed)
-    {
-        if (elapsed != mElapsed)
-        {
-            mElapsed = elapsed;
-            emit elapsedChanged();
-        }
-    }
+    /**
+     * @brief Methods to set/get the property that contains the time elapsed to
+     * draw one frame.
+     */
+    void setElapsed(float elapsed);
     float elapsed() const { return mElapsed; }
 
 protected:
@@ -158,6 +184,7 @@ protected:
     virtual void mouseReleaseEvent(QMouseEvent* ev) Q_DECL_OVERRIDE;
 
 signals:
+    /** @brief Called when the user wins the game. */
     void winGame();
     void elapsedChanged();
 
