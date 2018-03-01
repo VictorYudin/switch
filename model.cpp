@@ -8,6 +8,8 @@
 
 Model::Model(const char* iFile)
 {
+    // In this simple case the points and the indexes already well formed. So
+    // it's only necessary to read them from the text files.
     QFile modelDataFile(QString(iFile) + ".data.cache");
 
     if (!modelDataFile.open(QIODevice::ReadOnly | QIODevice::Text))

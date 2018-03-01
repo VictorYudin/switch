@@ -11,9 +11,14 @@ QByteArray versionShaderCode(const QByteArray& src)
     QByteArray versionedSrc;
 
     if (QOpenGLContext::currentContext()->isOpenGLES())
+    {
+        // OpenGL ES requires a special string
         versionedSrc.append(QByteArrayLiteral("#version 300 es\n"));
+    }
     else
+    {
         versionedSrc.append(QByteArrayLiteral("#version 330\n"));
+    }
 
     versionedSrc.append(src);
     return versionedSrc;
@@ -26,6 +31,7 @@ void Object::init(const char* iFileName, int iID, int iRows)
 {
     qDebug(iFileName);
 
+    // Load and compile the shader.
     QFile vertexShader(":/default.vert");
     QFile fragmantShader(":/default.frag");
     if (!vertexShader.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -47,10 +53,12 @@ void Object::init(const char* iFileName, int iID, int iRows)
         QOpenGLShader::Fragment, versionShaderCode(fragmantShader.readAll()));
     mProgram->link();
 
+    // Save the positions of the uniform variables.
     mMVPLoc = mProgram->uniformLocation("mvp");
     mNRowsLoc = mProgram->uniformLocation("nrows");
     mIDLoc = mProgram->uniformLocation("id");
 
+    // Initialize the buffers.
     mVAO.reset(new QOpenGLVertexArrayObject());
     mAnglesBuffer.reset(new QOpenGLBuffer());
     mNPoints = loadModel(iFileName, mVAO, mAnglesBuffer);
@@ -86,13 +94,14 @@ void Object::render(const QMatrix4x4& iMVP, const float* iAngles) const
 int Object::loadModel(
     const char* iFileName,
     QSharedPointer<QOpenGLVertexArrayObject> oVAO,
-    QSharedPointer<QOpenGLBuffer> oSwitchAngles)
+    QSharedPointer<QOpenGLBuffer> oSwitchAngles) const
 {
     qDebug("Loading...");
 
     QOpenGLExtraFunctions* f =
         QOpenGLContext::currentContext()->extraFunctions();
 
+    // This var reads the mesh.
     Model model(iFileName);
 
     oVAO->create();
@@ -101,7 +110,10 @@ int Object::loadModel(
     QOpenGLBuffer vbo;
     vbo.create();
     vbo.bind();
+    // The first 3 is the number of components in a vector the second 3 is
+    // because we have data for P, N and C for each vertex.
     vbo.allocate(model.data(), sizeof(GLfloat) * model.points() * 3 * 3);
+    // 3 because we need to do it for P, N and C
     for (int i = 0; i < 3; i++)
     {
         f->glEnableVertexAttribArray(i);
@@ -122,6 +134,7 @@ int Object::loadModel(
 
     if (oSwitchAngles)
     {
+        // The buffer for angles of each instance.
         std::vector<GLfloat> angles(mNRows * mNRows, 0.0f);
 
         oSwitchAngles->create();
