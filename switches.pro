@@ -24,9 +24,11 @@ RESOURCES += switches.qrc
 
 QML_FILES += switches.qml SwitchButton.qml
 
-QMAKE_CXXFLAGS += /wd4100 /wd4244 /wd4305
-QMAKE_CFLAGS_WARN_ON -= -W3
-QMAKE_CXXFLAGS_WARN_ON -= -W3
+winphone {
+    QMAKE_CXXFLAGS += /wd4100 /wd4244 /wd4305
+    QMAKE_CFLAGS_WARN_ON -= -W3
+    QMAKE_CXXFLAGS_WARN_ON -= -W3
+}
 
 target.path = c:\temp\switch-bin
 INSTALLS += target

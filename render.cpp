@@ -10,14 +10,15 @@
 #include <QOpenGLShaderProgram>
 #include <QtQuick/qquickwindow.h>
 #include <assert.h>
+#include <math.h>
 
 // Qt doesn't have it
 #define GL_COLOR 0x1800
 
 SwitchRender::SwitchRender() :
-        mSize(4),
         mElapsed{},
         mCurrentElapsed(0),
+        mSize(4),
         mPrepassFBO(0)
 {
     QOpenGLExtraFunctions* f =
@@ -435,13 +436,13 @@ void SwitchRender::synchronize(QQuickFramebufferObject* item)
     Switch* sw = reinterpret_cast<Switch*>(item);
 
     // Check if the user clicked.
-    if (sw->mLastClickX > 0 && sw->mLastClickY > 0)
+    if (sw->mLastClickX > 0.0f && sw->mLastClickY > 0.0f)
     {
         // Check if the user clicked by one of the switches.
         int ID = getObjectID(sw->mLastClickX, sw->mLastClickY);
 
-        sw->mLastClickX = -1;
-        sw->mLastClickY = -1;
+        sw->mLastClickX = -1.0f;
+        sw->mLastClickY = -1.0f;
 
         if (ID >= 0)
         {
@@ -483,8 +484,13 @@ void SwitchRender::synchronize(QQuickFramebufferObject* item)
     }
 }
 
-int SwitchRender::getObjectID(int x, int y)
+int SwitchRender::getObjectID(float x, float y)
 {
+    // Convert x and y from float (0..1) to int (0..resolution)
+    auto framebufferSize = framebufferObject()->size();
+    int xCoord = x * framebufferSize.width();
+    int yCoord = (1.0f - y) * framebufferSize.height();
+
     QOpenGLExtraFunctions* f =
         QOpenGLContext::currentContext()->extraFunctions();
 
@@ -495,14 +501,7 @@ int SwitchRender::getObjectID(int x, int y)
     f->glReadBuffer(GL_COLOR_ATTACHMENT3);
 
     float d[4] = {0.0f, 0.0f, 0.0f, 0.0f};
-    f->glReadPixels(
-        x,
-        framebufferObject()->size().height() - y,
-        1,
-        1,
-        GL_RGBA,
-        GL_FLOAT,
-        &d);
+    f->glReadPixels(xCoord, yCoord, 1, 1, GL_RGBA, GL_FLOAT, d);
 
     f->glBindFramebuffer(GL_FRAMEBUFFER, prevFbo);
 
@@ -516,8 +515,8 @@ int SwitchRender::getObjectID(int x, int y)
 
 Switch::Switch(QQuickItem* parent) :
         QQuickFramebufferObject(parent),
-        mLastClickX(-1),
-        mLastClickY(-1),
+        mLastClickX(-1.0f),
+        mLastClickY(-1.0f),
         mNewGamePressed(false)
 {
     // This call is crucial to even get any clicks at all
@@ -551,8 +550,8 @@ void Switch::mousePressEvent(QMouseEvent* ev)
 
 void Switch::mouseReleaseEvent(QMouseEvent* ev)
 {
-    mLastClickX = ev->x();
-    mLastClickY = ev->y();
+    mLastClickX = static_cast<float>(ev->x()) / width();
+    mLastClickY = static_cast<float>(ev->y()) / height();
     ev->accept();
 
     update();

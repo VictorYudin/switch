@@ -60,7 +60,7 @@ private:
      *
      * @return The ID of the object.
      */
-    int getObjectID(int x, int y);
+    int getObjectID(float x, float y);
 
     /**
      * @brief Initializes multiple framebuffers for the prepass. We need this
@@ -172,7 +172,7 @@ class Switch : public QQuickFramebufferObject
 
 public:
     Switch(QQuickItem* parent = Q_NULLPTR);
-    Renderer* createRenderer() const;
+    Renderer* createRenderer() const Q_DECL_OVERRIDE;
 
     /**
      * @brief Methods to set/get the property that contains the time elapsed to
@@ -196,8 +196,11 @@ public slots:
 private:
     friend class SwitchRender;
 
-    int mLastClickX;
-    int mLastClickY;
+    // In wasm the sizes of QQuickFramebufferObject and its OpenGL framebuffer
+    // can be different when using HiDPI profile or scaling the web page in the
+    // browser. This is why we keep the mouse position in float (0..1).
+    float mLastClickX;
+    float mLastClickY;
     bool mNewGamePressed;
 
     float mElapsed;
